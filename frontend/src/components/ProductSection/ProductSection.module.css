@@ -1,0 +1,25 @@
+.section {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.productsRow {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 2rem;
+
+  /* this makes it horizontally scrollable */
+  overflow-x: auto;
+
+  scroll-behavior: smooth;
+
+  .productsRow::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.heading {
+  margin-bottom: 1rem;
+}

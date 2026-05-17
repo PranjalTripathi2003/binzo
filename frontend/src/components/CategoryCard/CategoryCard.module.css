@@ -1,0 +1,24 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 15px;
+  background-color: #eef2ff;
+  width: 200px;
+  height: 300px;
+}
+
+.image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.title {
+  text-align: center;
+  margin-top: 1rem;
+
+  font-size: 1rem;
+  font-weight: 600;
+}
