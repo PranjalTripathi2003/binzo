@@ -1,28 +1,33 @@
-import React from "react";
 import styles from "./PromoCard.module.css";
 
 type PromoCardProps = {
   title: string;
   description: string;
   buttonText: string;
-  backgroundColor: string,
-  
+  backgroundColor: string;
+  image?: string;
 };
 
-{/*Creating the promocard with props*/}
-
-const PromoCard = ({ title, description, buttonText, backgroundColor}: PromoCardProps) => {
+const PromoCard = ({
+  title,
+  description,
+  buttonText,
+  backgroundColor,
+  image,
+}: PromoCardProps) => {
   return (
-    <section className={styles.promoCard} style={{backgroundColor}}>
+    <section className={styles.promoCard} style={{ backgroundColor }}>
       <div className={styles.left}>
         <h2>{title}</h2>
         <p>{description}</p>
         <button>{buttonText}</button>
       </div>
 
-      <div className = {styles.right}>
-        <img src='Promo Image' alt={title}></img>
-      </div>
+      {image && (
+        <div className={styles.right}>
+          <img src={image} alt={title} />
+        </div>
+      )}
     </section>
   );
 };

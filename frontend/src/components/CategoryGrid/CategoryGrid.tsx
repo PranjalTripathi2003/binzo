@@ -1,4 +1,3 @@
-import React from "react";
 import CategoryCard from "../CategoryCard/CategoryCard";
 import styles from "./CategoryGrid.module.css";
 

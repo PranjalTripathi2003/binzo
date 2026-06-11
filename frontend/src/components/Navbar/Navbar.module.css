@@ -1,34 +1,183 @@
 .navbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  gap: 2rem;
-  border-bottom: 1px solid;
+  width: 100%;
+  min-height: 96px;
+  padding: 0 2rem;
+  gap: 1.5rem;
+  border: 1px solid #000;
+  background: #fff;
 }
 
 .center {
-  flex: 1;
   display: flex;
+  flex: 1 1 auto;
   justify-content: center;
+  min-width: 280px;
 }
 
-.center input {
-  width: 60%;
-  padding: 0.75rem 1rem;
+.searchBox {
+  position: relative;
+  width: min(100%, 600px);
+  height: 56px;
+}
 
-  border-radius: 10px;
-  border: 1px solid;
+.searchBox input {
+  width: 100%;
+  height: 100%;
+  padding: 0 1.25rem 0 3.6rem;
+  border: none;
+  border-radius: 14px;
+  outline: none;
+  background: #f2eeee;
+  color: #000;
+  font: 400 1.25rem/1 "Inter", sans-serif;
+}
+
+.searchBox input::placeholder {
+  color: #b8b3b3;
+}
+
+.searchBox i {
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  pointer-events: none;
 }
 
 .left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.logo {
+  width: auto;
+  font-family: "Lobster", cursive;
+  font-size: 3.25rem;
+  font-weight: 400;
+  line-height: 1;
+  text-align: left;
+}
+
+.logoPrimary {
+  color: #4f46e5;
+}
+
+.logoAccent {
+  color: #dce546;
+}
+
+.delivery {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
+  flex: 0 0 auto;
+}
+
+.accountButton,
+.cartButton {
+  border: none;
+  background: transparent;
+  color: #000;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+}
+
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 48px;
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.cartButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 154px;
+  height: 56px;
+  border-radius: 14px;
+  background: #dce546;
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.cartButton i {
+  font-size: 1.35rem;
+}
+
+@media (max-width: 1120px) {
+  .navbar {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+
+  .center {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .searchBox {
+    width: 100%;
+    height: 56px;
+  }
+}
+
+@media (max-width: 720px) {
+  .navbar {
+    min-height: auto;
+    align-items: flex-start;
+  }
+
+  .left,
+  .right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .logo {
+    width: auto;
+    font-size: 3rem;
+    text-align: left;
+  }
+
+  .delivery {
+    width: auto;
+    font-size: 1.25rem;
+  }
+
+  .accountButton {
+    min-height: 48px;
+    font-size: 1.125rem;
+  }
+
+  .cartButton {
+    width: 150px;
+    height: 52px;
+    font-size: 1.25rem;
+  }
+
+  .searchBox input {
+    padding-left: 3.5rem;
+    font-size: 1.125rem;
+  }
+
+  .searchBox i {
+    left: 1.4rem;
+    font-size: 1.2rem;
+  }
 }

@@ -1,6 +1,14 @@
-.promoSection{
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    margin: 2rem;
+.promoSection {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  width: min(100% - 4rem, 1480px);
+  margin: 2.5rem auto;
+}
+
+@media (max-width: 1020px) {
+  .promoSection {
+    grid-template-columns: 1fr;
+    width: min(100% - 2rem, 640px);
+  }
 }

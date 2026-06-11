@@ -1,5 +1,3 @@
-import React from "react";
-
 import styles from "./ProductSection.module.css";
 import ProductCard from "../ProductCard/ProductCard";
 
@@ -44,28 +42,39 @@ const ProductSection = () => {
     <section className={styles.section}>
       <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
 
-      <div className={styles.productsRow}>
-        {products.map((product, index) => (
-          <ProductCard
-            key={index}
-            title={product.title}
-            quantity={product.quantity}
-            price={product.price}
-            image={product.image}
-          ></ProductCard>
-        ))}
+      <div className={styles.carouselWrapper}>
+        <div className={styles.productsRow}>
+          {products.map((product, index) => (
+            <ProductCard
+              key={index}
+              title={product.title}
+              quantity={product.quantity}
+              price={product.price}
+              image={product.image}
+            ></ProductCard>
+          ))}
+        </div>
+
+        <button className={styles.arrowBtn}>
+          <i className="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
-<h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
-       <div className={styles.productsRow}>
-        {products.map((product, index) => (
-          <ProductCard
-            key={index}
-            title={product.title}
-            quantity={product.quantity}
-            price={product.price}
-            image={product.image}
-          ></ProductCard>
-        ))}
+      <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
+      <div className={styles.carouselWrapper}>
+        <div className={styles.productsRow}>
+          {products.map((product, index) => (
+            <ProductCard
+              key={index}
+              title={product.title}
+              quantity={product.quantity}
+              price={product.price}
+              image={product.image}
+            ></ProductCard>
+          ))}
+        </div>
+        <button className={styles.arrowBtn}>
+          <i className="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
     </section>
   );
