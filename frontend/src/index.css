@@ -6,8 +6,11 @@
   box-sizing: border-box;
 }
 
-body {
+body, button, input, select, textarea {
   font-family: "Inter", sans-serif;
+}
+
+body {
   color: #000;
   background: #fff;
 }

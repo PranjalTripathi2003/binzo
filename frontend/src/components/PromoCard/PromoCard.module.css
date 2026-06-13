@@ -57,7 +57,7 @@
   border-radius: 14px;
   background: #fff;
   color: #000;
-  font: 500 1rem/1 "Inter", sans-serif;
+  font: 500 1rem/1 inherit;
   cursor: pointer;
 }
 
