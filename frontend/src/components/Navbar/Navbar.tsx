@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.body.style.overflow = isCartOpen ? "hidden" : "";
@@ -14,6 +15,25 @@ const Navbar = () => {
       document.body.style.overflow = "";
     };
   }, [isCartOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        accountDropdownRef.current &&
+        !accountDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsAccountOpen(false);
+      }
+    };
+
+    if (isAccountOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAccountOpen]);
 
   return (
     <>
@@ -50,7 +70,11 @@ const Navbar = () => {
             </button>
 
             {isAccountOpen && (
-              <div className={styles.dropdown} role="menu">
+              <div
+                className={styles.dropdown}
+                role="menu"
+                ref={accountDropdownRef}
+              >
                 <h3>Username</h3>
                 <p className={styles.phone}>xxxxxxxxx</p>
                 <button

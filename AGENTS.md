@@ -52,9 +52,9 @@ binzo/
 │   │   ├── pages/               # Page-level components (routed)
 │   │   │   ├── HomePage.tsx     # Main landing page
 │   │   │   ├── OrdersPage.tsx   # User order history
+│   │   │   ├── ProductDetailsPage.tsx  # Product detail view
 │   │   │   └── ...
-│   │   ├── data/                # Static data, constants, fixtures
-│   │   ├── styles/              # Global styles
+│   │   ├── data/                # Static data, types, fixtures (e.g. products.ts)
 │   │   ├── App.tsx              # Routes & app shell
 │   │   └── main.tsx             # React DOM entry point
 │   ├── package.json
@@ -89,19 +89,27 @@ binzo/
 ### Styling Convention
 
 - Use **CSS Modules** for component-scoped styles
-- Global styles in `src/styles/` directory
+- Global styles live in `src/index.css` (fonts, resets, body defaults)
 - Responsive breakpoints: `1120px`, `720px`, `520px` (mobile-first where applicable)
-
-### State Management
-
-- Use React hooks (`useState`, `useContext`) for local/shared state
-- For complex state, consider Context API or state library (discuss with team)
 
 ### Routing
 
-- Use React Router v7 (`useNavigate`, `Routes`, `Route`)
+- Use React Router v7 (`useNavigate`, `useParams`, `Link`, `Routes`, `Route`)
 - Page components live in `src/pages/`
-- Navigation items in account dropdown or buttons should use `useNavigate` hook
+- Register new routes in `src/App.tsx`
+- Current routes:
+  - `/` — HomePage
+  - `/orders` — OrdersPage
+  - `/product/:id` — ProductDetailsPage
+- Navigation from components: `useNavigate()`. In-page links: `<Link to="...">`.
+
+### State Management
+
+- **Current:** React hooks only (`useState`, `useEffect`, `useRef`) — no Redux, Zustand, or Context yet
+- **Local UI state** (dropdowns, overlays, scroll): keep in the component
+- **Shared client state** (cart, auth — upcoming): start with Context; consider Zustand if it grows
+- **Server state** (products, orders from API — upcoming): use TanStack Query, not a global store
+- Do not introduce a state library unless the feature requires shared state across multiple pages
 
 ### API Integration
 
@@ -218,8 +226,211 @@ Details to be finalized with backend team.
 
 ### Imports
 
-- Absolute imports from `src/` if configured
-- Relative imports for same-folder references
+- Relative imports from sibling/parent folders (e.g. `../components/Navbar/Navbar`)
+- Import CSS Modules as `styles` from `./ComponentName.module.css`
+- Import Font Awesome via global CSS in `main.tsx` — use `<i className="fa-solid fa-...">` in JSX
+
+---
+
+## Code Writing Guide
+
+This section is for AI agents and contributors writing code in this repo. **Read surrounding files before editing.** Match existing patterns rather than introducing new conventions.
+
+### Core Principles
+
+1. **Minimize scope** — Make the smallest correct change. Do not refactor unrelated code, add unused abstractions, or expand beyond what was asked.
+2. **Follow existing conventions** — Naming, file layout, styling, and import style should match neighboring files.
+3. **Avoid over-engineering** — No premature libraries, helpers, or abstractions. Inline simple logic; extract only when reused or clearly complex.
+4. **Comments sparingly** — Code should be self-explanatory. Comment only non-obvious business logic.
+5. **Tests when meaningful** — Add tests when requested or when covering real behavior. Skip trivial assertions.
+6. **Verify before finishing** — Run `npm run build` and `npm run lint` in `frontend/` after substantive changes.
+
+### Frontend: File & Folder Layout
+
+**Reusable UI** → `frontend/src/components/ComponentName/`
+
+```
+ComponentName/
+├── ComponentName.tsx
+└── ComponentName.module.css
+```
+
+**Routed views** → `frontend/src/pages/`
+
+```
+pages/
+├── PageName.tsx
+└── PageName.module.css   # optional; add when page-specific styles are needed
+```
+
+**Shared static data & types** → `frontend/src/data/`
+
+```
+data/
+└── products.ts           # types, mock data, lookup helpers
+```
+
+**Routes** → register in `frontend/src/App.tsx` only.
+
+### Frontend: React & TypeScript Patterns
+
+- Use **functional components** with hooks. No class components.
+- Use **`type` for props** (not `interface` unless matching an existing file):
+  ```tsx
+  type ProductCardProps = {
+    productId: string;
+    title: string;
+    price: number;
+  };
+  ```
+- **Default export** the component at the bottom of the file.
+- Name props types as `ComponentNameProps`.
+- Export shared domain types from `src/data/` or a dedicated types file — not from components.
+- Prefer explicit types on props and function params. Avoid `any`.
+- Use optional chaining and nullish coalescing where data may be missing (e.g. route params, API responses).
+
+**Page composition pattern** — pages assemble components; they stay thin:
+
+```tsx
+const HomePage = () => (
+  <>
+    <Navbar />
+    <Hero />
+    <ProductSection />
+    <Footer />
+  </>
+);
+```
+
+**Interactive components** — extract handlers with clear names; use functional `setState` updates:
+
+```tsx
+const openProductDetails = () => navigate(`/product/${productId}`);
+
+onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+```
+
+**Route params** — use `useParams<{ id: string }>()` and handle missing/invalid data with an early return (see `ProductDetailsPage.tsx`).
+
+**Reset local state when route data changes** — use `useEffect` keyed on the loaded entity:
+
+```tsx
+useEffect(() => {
+  if (!product) return;
+  setSelectedUnitId(product.units[0].id);
+  setQuantity(1);
+}, [product]);
+```
+
+### Frontend: CSS Modules
+
+- One `.module.css` file per component/page that needs scoped styles.
+- Import as: `import styles from "./ComponentName.module.css"`
+- Class names: **camelCase** (`.cartButton`, `.unitGrid`, `.priceRow`)
+- Apply classes: `className={styles.cartButton}`
+- Conditional classes:
+  ```tsx
+  className={`${styles.unitButton} ${isSelected ? styles.unitButtonSelected : ""}`}
+  ```
+- Do **not** set `font-family` in component CSS unless overriding for branding — Inter is inherited globally.
+- Use **media queries** at project breakpoints: `1120px`, `720px`, `520px`
+- Prefer flexbox/grid layouts already used in the codebase.
+- Common radii: `12px`–`14px` for cards/buttons; `50%` for circular icon buttons.
+
+### Typography
+
+| Usage | Font | Where set |
+|-------|------|-----------|
+| All UI text, buttons, inputs | **Inter** (400, 500, 700, 800) | `src/index.css` — inherited globally |
+| Logo ("Binzo") and footer branding | **Lobster** | `Navbar.module.css`, `Footer.module.css` only |
+
+Do not introduce additional fonts without explicit approval.
+
+### Design Tokens (use these consistently)
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| Primary indigo | `#4F46E5` | Links, focus rings, selected unit borders, hero accents |
+| Primary indigo light | `#EEF2FF` | Selected unit/card backgrounds |
+| Accent lime | `#DCE546` | Cart button, quantity controls, promo accents |
+| Text primary | `#000000` | Headings, prices, primary labels |
+| Text muted | `#64748B` | Secondary labels, unit sizes, tax notes |
+| Border light | `#E2E8F0` / `#DCDCDC` | Card borders, inputs |
+| Surface muted | `#F8FAFC` / `#F7F8FC` | Image placeholders, page backgrounds |
+| White | `#FFFFFF` | Cards, panels |
+
+Match Figma specs when implementing new UI. If Figma provides exact colors, use those values.
+
+### Icons
+
+- **Font Awesome Free v7** — loaded globally in `main.tsx`
+- Use solid icons: `<i className="fa-solid fa-cart-shopping" />`
+- Decorative icons inside buttons should have `aria-label` on the button, not on the icon
+
+### Accessibility
+
+Follow patterns in `ProductDetailsPage.tsx` and `ProductCard.tsx`:
+
+- Use `type="button"` on all non-submit buttons
+- Provide `aria-label` on icon-only or ambiguous controls
+- Use `aria-expanded`, `aria-pressed`, `aria-checked`, `role="radio"` / `role="radiogroup"` for custom toggles
+- Clickable non-link elements: add `tabIndex={0}`, keyboard handler for Enter/Space, and a descriptive `aria-label`
+- Use `event.stopPropagation()` when a nested button should not trigger a parent click handler (e.g. Add vs. card click)
+- Images: meaningful `alt` on content images; `alt=""` on decorative/thumbnail duplicates
+
+### Data Layer (current MVP)
+
+Until the backend is live, use `src/data/` for mock catalog data:
+
+```ts
+export type Product = { id: string; title: string; /* ... */ };
+
+export const products: Product[] = [ /* ... */ ];
+
+export function getProductById(id: string): Product | undefined {
+  return products.find((product) => product.id === id);
+}
+```
+
+- Product images are served from `frontend/public/` (e.g. `/images/milk.png`)
+- Components should import from `data/` rather than duplicating inline arrays
+- When API integration arrives, replace data helpers with fetch/React Query calls — keep types
+
+### Navigation Patterns
+
+| Scenario | Approach |
+|----------|----------|
+| Button/action navigation | `const navigate = useNavigate(); navigate("/orders")` |
+| Text links, back links | `<Link to="/">Back to home</Link>` |
+| Product card → detail | `navigate(\`/product/${productId}\`)` |
+| Navbar logo | `onClick={() => navigate("/")}` |
+
+Every page that needs the header should include `<Navbar />` at the top (consistent with `HomePage`, `OrdersPage`, `ProductDetailsPage`).
+
+### What Not To Do
+
+- Do not add Redux, Zustand, TanStack Query, or other libraries without a clear need
+- Do not use inline styles except for truly dynamic values
+- Do not use CSS-in-JS or Tailwind — this project uses CSS Modules
+- Do not create commits, push, or open PRs unless explicitly asked
+- Do not duplicate mock data inside components — centralize in `src/data/`
+- Do not change unrelated files while fixing a focused issue
+- Do not use `interface` for new props types if the file uses `type` (stay consistent per file)
+
+### Backend Code Guide (when implementing)
+
+The backend folder is not yet scaffolded. When building it:
+
+- **Framework:** NestJS with TypeScript, modular structure under `backend/src/modules/`
+- **One module per domain:** auth, products, orders, cart, users, payments
+- **Controllers** handle HTTP; **services** hold business logic; **DTOs** validate input
+- **API prefix:** `/api` (frontend expects `http://localhost:3000/api`)
+- **Response shape:**
+  ```json
+  { "success": true, "data": {}, "message": "...", "timestamp": "..." }
+  ```
+- Use environment variables for Supabase credentials — never commit secrets
+- Match NestJS conventions: PascalCase classes, camelCase methods, kebab-case route paths
 
 ---
 
@@ -230,6 +441,7 @@ Details to be finalized with backend team.
 - [x] Navbar with account dropdown and cart overlay
 - [x] Home page with hero, categories, products
 - [x] Product display and filtering
+- [x] Product details page (`/product/:id`)
 - [ ] Shopping cart functionality (full cart backend integration)
 - [ ] Checkout flow
 - [ ] Orders page (UI built, backend TBD)
@@ -266,4 +478,4 @@ Details to be finalized with backend team.
 
 ---
 
-**Last Updated:** 2026-06-13
+**Last Updated:** 2026-06-16

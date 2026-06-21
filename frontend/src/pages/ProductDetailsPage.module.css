@@ -1,0 +1,243 @@
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mainImage {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mainImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbnails {
+  display: flex;
+  gap: 1rem;
+}
+
+.thumbnail {
+  flex: 1;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbnailActive {
+  flex: 1;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid #4f46e5;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #000;
+}
+
+.unitSizeLabel {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.unitGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 360px;
+}
+
+.unitButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 72px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.unitButtonSelected {
+  background: #eef2ff;
+  border-color: #4f46e5;
+  box-shadow: inset 0 0 0 1px #4f46e5;
+}
+
+.unitLabel {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.unitSize {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.priceRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 0.5rem;
+}
+
+.selectedUnitLabel {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 0.35rem;
+}
+
+.price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #000;
+  line-height: 1;
+}
+
+.taxNote {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.quantityControl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 110px;
+  height: 48px;
+  padding: 0 1rem;
+  border-radius: 14px;
+  background: #dce546;
+  font-size: 1.35rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.quantityControl button {
+  border: none;
+  background: transparent;
+  color: #000;
+  font: inherit;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+}
+
+.notFound {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.notFound h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.backLink {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1120px) {
+  .page {
+    gap: 2.5rem;
+    padding: 2.5rem 1.5rem 3rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .unitGrid {
+    max-width: none;
+  }
+
+  .priceRow {
+    align-items: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .unitGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quantityControl {
+    min-width: 96px;
+    height: 42px;
+    font-size: 1.2rem;
+  }
+}

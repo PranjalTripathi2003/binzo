@@ -1,78 +1,94 @@
+import { useRef, useState } from "react";
+import { products } from "../../data/products";
 import styles from "./ProductSection.module.css";
 import ProductCard from "../ProductCard/ProductCard";
 
 const ProductSection = () => {
-  const products = [
-    {
-      title: "Amul Gold Milk",
-      quantity: "500ml",
-      price: 34,
-      image: "/images/milk.png",
-    },
+  const rowRef1 = useRef<HTMLDivElement>(null);
+  const rowRef2 = useRef<HTMLDivElement>(null);
+  const [scrolled1, setScrolled1] = useState(false);
+  const [scrolled2, setScrolled2] = useState(false);
 
-    {
-      title: "Amul Gold Milk",
-      quantity: "500ml",
-      price: 34,
-      image: "/images/milk.png",
-    },
+  const carouselProducts = Array.from({ length: 5 }, () => products[0]);
 
-    {
-      title: "Amul Gold Milk",
-      quantity: "500ml",
-      price: 34,
-      image: "/images/milk.png",
-    },
+  const handleScrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: 320, behavior: "smooth" });
+    }
+  };
 
-    {
-      title: "Amul Gold Milk",
-      quantity: "500ml",
-      price: 34,
-      image: "/images/milk.png",
-    },
+  const handleScrollLeft = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: -320, behavior: "smooth" });
+    }
+  };
 
-    {
-      title: "Amul Gold Milk",
-      quantity: "500ml",
-      price: 34,
-      image: "/images/milk.png",
-    },
-  ];
   return (
     <section className={styles.section}>
       <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
 
       <div className={styles.carouselWrapper}>
-        <div className={styles.productsRow}>
-          {products.map((product, index) => (
+        {scrolled1 && (
+          <button
+            className={styles.arrowBtnLeft}
+            onClick={() => handleScrollLeft(rowRef1)}
+          >
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+        )}
+        <div
+          className={styles.productsRow}
+          ref={rowRef1}
+          onScroll={(e) => setScrolled1((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
+        >
+          {carouselProducts.map((product, index) => (
             <ProductCard
               key={index}
+              productId={product.id}
               title={product.title}
-              quantity={product.quantity}
-              price={product.price}
+              quantity={product.units[0].size}
+              price={product.units[0].price}
               image={product.image}
-            ></ProductCard>
+            />
           ))}
         </div>
-
-        <button className={styles.arrowBtn}>
+        <button
+          className={styles.arrowBtn}
+          onClick={() => handleScrollRight(rowRef1)}
+        >
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>
       <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
       <div className={styles.carouselWrapper}>
-        <div className={styles.productsRow}>
-          {products.map((product, index) => (
+        {scrolled2 && (
+          <button
+            className={styles.arrowBtnLeft}
+            onClick={() => handleScrollLeft(rowRef2)}
+          >
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+        )}
+        <div
+          className={styles.productsRow}
+          ref={rowRef2}
+          onScroll={(e) => setScrolled2((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
+        >
+          {carouselProducts.map((product, index) => (
             <ProductCard
               key={index}
+              productId={product.id}
               title={product.title}
-              quantity={product.quantity}
-              price={product.price}
+              quantity={product.units[0].size}
+              price={product.units[0].price}
               image={product.image}
-            ></ProductCard>
+            />
           ))}
         </div>
-        <button className={styles.arrowBtn}>
+        <button
+          className={styles.arrowBtn}
+          onClick={() => handleScrollRight(rowRef2)}
+        >
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -80,4 +96,6 @@ const ProductSection = () => {
   );
 };
 
+
 export default ProductSection;
+

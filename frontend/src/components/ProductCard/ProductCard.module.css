@@ -14,6 +14,20 @@
   background-color: white;
 
   flex-shrink: 0;
+
+  cursor: pointer;
+
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.productCard:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.productCard:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
 }
 
 .image {
