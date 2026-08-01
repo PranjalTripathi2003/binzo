@@ -1,7 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
-
+import {
+  getCurrentUser,
+  login,
+  logout,
+  register,
+  type AuthUser,
+} from "../../services/auth";
 /**
  * Learning TODO map for frontend/backend connection:
  * - Auth: use services/auth.ts from this file for login/register/me/logout.
@@ -11,6 +17,8 @@ import { useEffect, useRef, useState } from "react";
 const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  // User state being created for log in and log out
+  const [user, setUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +48,44 @@ const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isAccountOpen]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    getCurrentUser()
+      .then((currentUser) => setUser(currentUser))
+      .catch(() => setUser(null));
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const result = await login({
+        email: "test@example.com",
+        password: "123456",
+      });
+      localStorage.setItem("access_token", result.access_token);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      setIsAccountOpen(false);
+    } catch (error) {
+      console.error("Login faile", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      localStorage.removeItem("access_token");
+      setUser(null);
+      setIsAccountOpen(false);
+    }
+  };
 
   return (
     <>
@@ -81,36 +127,54 @@ const Navbar = () => {
                 role="menu"
                 ref={accountDropdownRef}
               >
-                {/* TODO(auth): Replace these placeholders with getCurrentUser() data after login/register. */}
-                <h3>Username</h3>
-                <p className={styles.phone}>xxxxxxxxx</p>
-                {/* TODO(auth): Add login/register form UI here, then call login() or register() from services/auth.ts. */}
-                <button
-                  className={styles.dropdownItem}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setIsAccountOpen(false);
-                    navigate("/orders");
-                  }}
-                >
-                  My Orders
-                </button>
-                <button
-                  className={styles.dropdownItem}
-                  type="button"
-                  role="menuitem"
-                >
-                  Saved Addresses
-                </button>
-                <button
-                  className={styles.dropdownItem}
-                  type="button"
-                  role="menuitem"
-                >
-                  {/* TODO(auth): Call logout(), remove localStorage.access_token, and reset account state. */}
-                  Log Out
-                </button>
+                {user ? (
+                  <>
+                    <h3>{user.name ?? user.email}</h3>
+                    <p className={styles.phone}>{user.email}</p>
+                    <button
+                      className={styles.dropdownItem}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsAccountOpen(false);
+                        navigate("/orders");
+                      }}
+                    >
+                      My Orders
+                    </button>
+                    <button
+                      className={styles.dropdownItem}
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={styles.dropdownItem}
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogin}
+                    >
+                      Login
+                    </button>
+
+                    <button
+                      className={styles.dropdownItem}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        // later you can call register here
+                        setIsAccountOpen(false);
+                      }}
+                    >
+                      Register
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
