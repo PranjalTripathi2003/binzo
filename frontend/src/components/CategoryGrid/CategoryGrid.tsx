@@ -1,56 +1,27 @@
 import CategoryCard from "../CategoryCard/CategoryCard";
 import styles from "./CategoryGrid.module.css";
 
-const CategoryGrid = () => {
-  {
-    /* Mock data array for passing to category card */
-  }
-  const categories = [
-  {
-    title: "Dairy, Bread & Eggs",
-    image: "/images/dairy.png"
-  },
+/**
+ * Learning TODO for category filtering:
+ * 1. Add an onCategorySelect prop here.
+ * 2. Wrap each CategoryCard in a button or make CategoryCard clickable.
+ * 3. Pass category.id back to HomePage.
+ * 4. In HomePage, call getProducts(categoryId).
+ */
+type CategoryGridProps = {
+  categories: {
+    id: string;
+    title: string;
+    image: string;
+  }[];
+};
 
-  {
-    title: "Fruits & Vegetables",
-    image: "/images/fruits.png"
-  },
-
-  {
-    title: "Cold Drinks & Juices",
-    image: "/images/drinks.png"
-  },
-
-  {
-    title: "Snacks & Munchies",
-    image: "/images/snacks.png"
-  },
-
-  {
-    title: "Sweet Tooth",
-    image: "/images/sweets.png"
-  },
-
-  {
-    title: "Tea, Coffee & Milk Drinks",
-    image: "/images/tea.png"
-  },
-
-  {
-    title: "Chicken, Meat & Fish",
-    image: "/images/chicken.png"
-  },
-
-  {
-    title: "Cleaning Essentials",
-    image: "/images/cleaning.png"
-  }
-]
+const CategoryGrid = ({ categories }: CategoryGridProps) => {
   return (
     <section className={styles.grid}>
       {categories.map((category) => (
         <CategoryCard
-          key={category.title}
+          key={category.id}
           title={category.title}
           image={category.image}
         ></CategoryCard>

@@ -2,6 +2,12 @@ import { useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Learning TODO map for frontend/backend connection:
+ * - Auth: use services/auth.ts from this file for login/register/me/logout.
+ * - Cart: use services/cart.ts when opening the cart and changing quantities.
+ * - Checkout: use services/orders.ts createOrder() from the Pay Now button.
+ */
 const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -75,8 +81,10 @@ const Navbar = () => {
                 role="menu"
                 ref={accountDropdownRef}
               >
+                {/* TODO(auth): Replace these placeholders with getCurrentUser() data after login/register. */}
                 <h3>Username</h3>
                 <p className={styles.phone}>xxxxxxxxx</p>
+                {/* TODO(auth): Add login/register form UI here, then call login() or register() from services/auth.ts. */}
                 <button
                   className={styles.dropdownItem}
                   type="button"
@@ -100,6 +108,7 @@ const Navbar = () => {
                   type="button"
                   role="menuitem"
                 >
+                  {/* TODO(auth): Call logout(), remove localStorage.access_token, and reset account state. */}
                   Log Out
                 </button>
               </div>
@@ -145,10 +154,12 @@ const Navbar = () => {
                   <i className="fa-solid fa-stopwatch"></i>
                   <div>
                     <h2>Delivery in 10 minutes</h2>
+                    {/* TODO(cart): Replace this with the real cart item count from getCart(). */}
                     <p>Shipment of 1 item</p>
                   </div>
                 </div>
 
+                {/* TODO(cart): Replace this placeholder with cart_items returned by services/cart.ts getCart(). */}
                 <div className={styles.cartItem}>
                   <div className={styles.itemImage}></div>
                   <div className={styles.itemInfo}>
@@ -172,6 +183,7 @@ const Navbar = () => {
                   </span>
                   <strong>XX</strong>
                 </div>
+                {/* TODO(cart): Calculate Items Total from cart item price * quantity. */}
                 <div className={styles.billRow}>
                   <span>
                     <i className="fa-solid fa-motorcycle"></i>
@@ -209,6 +221,7 @@ const Navbar = () => {
                   <strong>XX</strong>
                   Total
                 </span>
+                {/* TODO(orders): Call createOrder() from services/orders.ts, then clear/refresh the cart UI. */}
                 <button>Pay Now</button>
               </div>
             </section>

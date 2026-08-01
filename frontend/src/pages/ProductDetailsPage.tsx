@@ -1,28 +1,69 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
-import { getProductById } from "../data/products";
+import { getProductById, type Product } from "../data/products";
+import { getProduct } from "../services/catalog";
 import styles from "./ProductDetailsPage.module.css";
 
 const ProductDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const product = id ? getProductById(id) : undefined;
+  const fallbackProduct = id ? getProductById(id) : undefined;
+  const [product, setProduct] = useState<Product | undefined>(fallbackProduct);
+  const [isLoading, setIsLoading] = useState(Boolean(id && !fallbackProduct));
 
   const [selectedUnitId, setSelectedUnitId] = useState(
-    product?.units[0]?.id ?? "",
+    fallbackProduct?.units[0]?.id ?? "",
   );
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
+  const selectProduct = (nextProduct: Product | undefined) => {
+    setProduct(nextProduct);
+    setSelectedUnitId(nextProduct?.units[0]?.id ?? "");
+    setSelectedImageIndex(0);
+    setQuantity(1);
+  };
+
   useEffect(() => {
-    if (!product) {
+    if (!id) {
       return;
     }
 
-    setSelectedUnitId(product.units[0].id);
-    setSelectedImageIndex(0);
-    setQuantity(1);
-  }, [product]);
+    let isMounted = true;
+
+    getProduct(id)
+      .then((loadedProduct) => {
+        if (isMounted) {
+          selectProduct(loadedProduct);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        if (isMounted) {
+          selectProduct(fallbackProduct);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fallbackProduct, id]);
+
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className={styles.notFound}>
+          <h1>Loading product...</h1>
+        </div>
+      </>
+    );
+  }
 
   if (!product) {
     return (

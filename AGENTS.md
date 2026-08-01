@@ -432,6 +432,16 @@ The backend folder is not yet scaffolded. When building it:
 - Use environment variables for Supabase credentials — never commit secrets
 - Match NestJS conventions: PascalCase classes, camelCase methods, kebab-case route paths
 
+### Backend & Database Documentation Standard
+
+When creating or changing backend/database code, document the purpose where future readers will look first:
+
+- Add a short file/class JSDoc to each controller, service, DTO, module, and strategy explaining what that file owns.
+- Add a JSDoc block to every public controller/service method explaining the route or database behavior, the main tables touched, and any ownership/security checks.
+- Use inline comments only for non-obvious database behavior, such as cascade deletes, relation selects, transaction-like cleanup, token rotation, or Supabase-specific error codes.
+- For schema changes, add PostgreSQL `COMMENT ON TABLE` and `COMMENT ON COLUMN` statements in a new migration so Supabase/Postgres metadata explains the database itself.
+- If a service depends on a table/column that is only in a SQL snippet, call that out in code comments and move the SQL into a migration before treating it as production-ready.
+
 ---
 
 ## Common Features (Roadmap)

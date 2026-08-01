@@ -1,15 +1,22 @@
 import { useRef, useState } from "react";
-import { products } from "../../data/products";
+import type { Product } from "../../data/products";
 import styles from "./ProductSection.module.css";
 import ProductCard from "../ProductCard/ProductCard";
 
-const ProductSection = () => {
+type ProductSectionProps = {
+  products: Product[];
+};
+
+const ProductSection = ({ products }: ProductSectionProps) => {
   const rowRef1 = useRef<HTMLDivElement>(null);
   const rowRef2 = useRef<HTMLDivElement>(null);
   const [scrolled1, setScrolled1] = useState(false);
   const [scrolled2, setScrolled2] = useState(false);
 
-  const carouselProducts = Array.from({ length: 5 }, () => products[0]);
+  const featuredProducts = products.slice(0, 8);
+  const pantryProducts = products.slice(8, 16);
+  const secondRowProducts =
+    pantryProducts.length > 0 ? pantryProducts : featuredProducts;
 
   const handleScrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
@@ -41,9 +48,9 @@ const ProductSection = () => {
           ref={rowRef1}
           onScroll={(e) => setScrolled1((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
         >
-          {carouselProducts.map((product, index) => (
+          {featuredProducts.map((product) => (
             <ProductCard
-              key={index}
+              key={product.id}
               productId={product.id}
               title={product.title}
               quantity={product.units[0].size}
@@ -59,7 +66,7 @@ const ProductSection = () => {
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>
-      <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
+      <h2 className={styles.heading}> Popular Picks</h2>
       <div className={styles.carouselWrapper}>
         {scrolled2 && (
           <button
@@ -74,9 +81,9 @@ const ProductSection = () => {
           ref={rowRef2}
           onScroll={(e) => setScrolled2((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
         >
-          {carouselProducts.map((product, index) => (
+          {secondRowProducts.map((product) => (
             <ProductCard
-              key={index}
+              key={product.id}
               productId={product.id}
               title={product.title}
               quantity={product.units[0].size}

@@ -1,6 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./ProductCard.module.css";
 
+/**
+ * Learning TODO:
+ * - ProductCard is the right place to call services/cart.ts addToCart().
+ * - To do that cleanly, pass a variantId prop from ProductSection using
+ *   product.units[0].id, then send { variant_id: variantId, quantity: 1 }.
+ */
 type ProductCardProps = {
   productId: string;
   image: string;
@@ -48,6 +54,8 @@ const ProductCard = ({
         <button
           className={styles.button}
           type="button"
+          // TODO(cart): event.stopPropagation() is already here so Add does not open product details.
+          // Next step: call addToCart() here and show login/error feedback if there is no token.
           onClick={(event) => event.stopPropagation()}
         >
           Add

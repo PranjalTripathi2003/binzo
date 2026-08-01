@@ -1,6 +1,20 @@
 import Navbar from "../components/Navbar/Navbar";
 import styles from "./OrdersPage.module.css";
 
+/**
+ * Learning TODO:
+ * Replace this mock array with live data from services/orders.ts getOrders().
+ *
+ * Suggested steps:
+ * 1. Import useEffect/useState and getOrders().
+ * 2. Store orders in state.
+ * 3. Fetch orders on mount.
+ * 4. Convert backend fields:
+ *    - total_amount -> amount
+ *    - created_at -> date
+ *    - status -> success/cancel styling
+ *    - order_items -> item preview images/names
+ */
 const orders = [
   {
     id: "1",

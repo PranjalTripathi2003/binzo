@@ -1,5 +1,8 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+/**
+ * Request body for creating a categories row.
+ */
 export class CreateCategoryDto {
   @IsString()
   @IsNotEmpty()

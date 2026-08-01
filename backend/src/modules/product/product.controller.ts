@@ -1,64 +1,91 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductService } from './product.service';
 
+/**
+ * HTTP layer for product catalog routes under /api/products.
+ *
+ * Controllers keep the API response shape consistent. ProductService owns the
+ * Supabase queries against products and product_variants.
+ */
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   /**
-   * TODO: Implement GET /api/products
-   * Description: Fetches all products, optionally filtered by a query parameter 'categoryId'.
-   * Requirements:
-   * 1. Use the `@Get()` decorator.
-   * 2. Use `@Query('categoryId')` to extract the category ID query parameter if present.
-   * 3. Call `this.productService.findAll(categoryId)`.
-   * 4. Return standard response wrapper: `{ success: true, data, message, timestamp }`
+   * GET /api/products
+   *
+   * Returns products with nested variants. Optional categoryId filters the list
+   * for category browsing.
    */
-  async findAll() {
-    // YOUR CODE HERE
-    return null;
+
+  @Get()
+  async findAll(@Query('categoryId') categoryId: string) {
+    const data = await this.productService.findAll(categoryId);
+    return {
+      success: true,
+      data,
+      message: 'Products retrieved successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**
-   * TODO: Implement GET /api/products/:id
-   * Description: Fetches a single product by ID.
-   * Requirements:
-   * 1. Use the `@Get(':id')` decorator.
-   * 2. Use `@Param('id')` to extract the ID parameter.
-   * 3. Call `this.productService.findOne(id)`.
-   * 4. Return standard response wrapper.
+   * GET /api/products/:id
+   *
+   * Returns one product with variants for the product detail page.
    */
-  async findOne() {
-    // YOUR CODE HERE
-    return null;
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const data = await this.productService.findOne(id);
+    return {
+      success: true,
+      data,
+      message: 'Product retrieved successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**
-   * TODO: Implement POST /api/products
-   * Description: Creates a new product and its variants.
-   * Requirements:
-   * 1. Use the `@Post()` decorator.
-   * 2. Use `@Body()` to extract the 'CreateProductDto'.
-   * 3. Call `this.productService.create(createProductDto)`.
-   * 4. Return standard response wrapper.
+   * POST /api/products
+   *
+   * Creates a product row and its product_variants rows.
    */
-  async create() {
-    // YOUR CODE HERE
-    return null;
+
+  @Post()
+  async create(@Body() createProductDto: CreateProductDto) {
+    const data = await this.productService.create(createProductDto);
+    return {
+      success: true,
+      data,
+      message: 'Product and its variants created successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**
-   * TODO: Implement DELETE /api/products/:id
-   * Description: Deletes a product.
-   * Requirements:
-   * 1. Use the `@Delete(':id')` decorator.
-   * 2. Use `@Param('id')` to extract the ID.
-   * 3. Call `this.productService.remove(id)`.
-   * 4. Return standard response wrapper.
+   * DELETE /api/products/:id
+   *
+   * Deletes a product. Product variants are removed by database cascade.
    */
-  async remove() {
-    // YOUR CODE HERE
-    return null;
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    const data = await this.productService.remove(id);
+    return {
+      success: true,
+      data,
+      message: 'Product deleted successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

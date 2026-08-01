@@ -1,6 +1,20 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
+/**
+ * One purchasable unit for a product.
+ *
+ * Example: a milk product can have 500ml and 1L variants, each with a different
+ * price, stock count, and image.
+ */
 export class CreateProductVariantDto {
   @IsString()
   @IsNotEmpty()
@@ -23,6 +37,9 @@ export class CreateProductVariantDto {
   note?: string;
 }
 
+/**
+ * Request body for creating a products row and its product_variants rows.
+ */
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
