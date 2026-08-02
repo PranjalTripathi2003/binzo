@@ -82,7 +82,6 @@ const AdminPage = () => {
   const [prodBrand, setProdBrand] = useState("");
   const [prodDesc, setProdDesc] = useState("");
   const [prodCategoryId, setProdCategoryId] = useState("");
-  const [productImages, setProductImages] = useState<ProductImageDraft[]>([]);
   const [variants, setVariants] = useState<VariantDraft[]>([emptyVariant()]);
   const [prodSubmitting, setProdSubmitting] = useState(false);
   const [prodError, setProdError] = useState("");
@@ -187,7 +186,6 @@ const AdminPage = () => {
     setProdBrand("");
     setProdDesc("");
     setProdCategoryId("");
-    setProductImages([]);
     setVariants([emptyVariant()]);
     setProdError("");
     setEditingProductId(null);
@@ -220,28 +218,12 @@ const AdminPage = () => {
       }),
     );
 
-  const resolveProductImageDrafts = async () =>
-    Promise.all(
-      productImages.map(async (image) => {
-        if (image.imageFile) {
-          return uploadProductImage(image.imageFile);
-        }
-
-        return image.image_url;
-      }),
-    );
-
   const handleEditProduct = (product: Product) => {
     setEditingProductId(product.id);
     setProdName(product.name);
     setProdBrand(product.brand ?? "");
     setProdDesc(product.description ?? "");
     setProdCategoryId(product.category_id);
-    setProductImages(
-      (product.product_images ?? [])
-        .sort((a, b) => a.position - b.position)
-        .map((image) => productImageDraftFromUrl(image.image_url)),
-    );
     setVariants(
       product.product_variants.length > 0
         ? product.product_variants.map((variant) => {
@@ -283,14 +265,15 @@ const AdminPage = () => {
     try {
       const resolvedVariants =
         (await resolveVariantDrafts()) as CreateProductVariantInput[];
-      const resolvedProductImages = await resolveProductImageDrafts();
+      // Derive product-level images from all variant images (first variant first)
+      const productImageUrls = resolvedVariants.flatMap((v) => v.image_urls ?? []);
 
       const product = await createProduct({
         category_id: prodCategoryId,
         name: prodName.trim(),
         brand: prodBrand.trim() || undefined,
         description: prodDesc.trim() || undefined,
-        image_urls: resolvedProductImages,
+        image_urls: productImageUrls.length > 0 ? productImageUrls : undefined,
         variants: resolvedVariants,
       });
 
@@ -315,13 +298,14 @@ const AdminPage = () => {
     try {
       const resolvedVariants =
         (await resolveVariantDrafts()) as UpdateProductVariantInput[];
-      const resolvedProductImages = await resolveProductImageDrafts();
+      // Derive product-level images from all variant images (first variant first)
+      const productImageUrls = resolvedVariants.flatMap((v) => v.image_urls ?? []);
       const product = await updateProduct(editingProductId, {
         category_id: prodCategoryId,
         name: prodName.trim(),
         brand: prodBrand.trim() || undefined,
         description: prodDesc.trim() || undefined,
-        image_urls: resolvedProductImages,
+        image_urls: productImageUrls,
         variants: resolvedVariants,
       });
 
@@ -387,22 +371,6 @@ const AdminPage = () => {
 
   const removeVariant = (index: number) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleProductImages = (files: FileList | null) => {
-    if (!files) return;
-
-    const nextImages = Array.from(files).map((file) => ({
-      image_url: "",
-      imageFile: file,
-      imagePreview: URL.createObjectURL(file),
-    }));
-
-    setProductImages((prev) => [...prev, ...nextImages]);
-  };
-
-  const removeProductImage = (index: number) => {
-    setProductImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   // ── Slug auto-generate ───────────────────────────────────
@@ -925,48 +893,6 @@ const AdminPage = () => {
                 </div>
               </div>
 
-              <div className={styles.productImagesSection}>
-                <div className={styles.variantHeader}>
-                  <h3 className={styles.formCardTitle}>Product Images</h3>
-                  <label className={styles.addVariantBtn} htmlFor="product-images">
-                    <i className="fa-solid fa-images" />
-                    Add Images
-                  </label>
-                  <input
-                    id="product-images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className={styles.fileInputHidden}
-                    onChange={(e) => {
-                      handleProductImages(e.target.files);
-                      e.target.value = "";
-                    }}
-                  />
-                </div>
-
-                {productImages.length > 0 ? (
-                  <div className={styles.productImageGrid}>
-                    {productImages.map((image, index) => (
-                      <div key={`${image.imagePreview}-${index}`} className={styles.productImagePreview}>
-                        <img src={image.imagePreview} alt={`Product preview ${index + 1}`} />
-                        <button
-                          type="button"
-                          onClick={() => removeProductImage(index)}
-                          aria-label={`Remove product image ${index + 1}`}
-                        >
-                          <i className="fa-solid fa-xmark" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={styles.productImageEmpty}>
-                    <i className="fa-solid fa-image" aria-hidden="true" />
-                    Upload one or more product photos for the card and detail gallery.
-                  </div>
-                )}
-              </div>
 
               {/* Variants */}
               <div className={styles.sectionDivider} />

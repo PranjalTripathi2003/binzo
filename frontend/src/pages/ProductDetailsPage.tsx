@@ -93,24 +93,31 @@ const ProductDetailsPage = () => {
   const cartQuantity = selectedUnit ? getVariantQuantity(selectedUnit.id) : 0;
   const displayedQuantity = cartQuantity > 0 ? cartQuantity : quantity;
 
-  const handleQuantityChange = async (direction: 1 | -1) => {
-    const nextDisplayQuantity = Math.max(1, displayedQuantity + direction);
-
-    if (nextDisplayQuantity === displayedQuantity) {
-      return;
-    }
-
-    if (!selectedUnit) {
-      setQuantity(nextDisplayQuantity);
-      return;
-    }
-
+  const handleAddToCart = async (initialQuantity = 1) => {
+    if (!selectedUnit) return;
     setIsUpdatingCart(true);
     try {
-      const nextCartQuantity =
-        cartQuantity > 0 ? cartQuantity + direction : nextDisplayQuantity;
+      await setVariantQuantity(selectedUnit.id, initialQuantity);
+    } catch (error) {
+      if (error instanceof Error && error.message === "unauthenticated") {
+        alert("Please log in to add items to your cart.");
+      }
+    } finally {
+      setIsUpdatingCart(false);
+    }
+  };
+
+  const handleQuantityChange = async (direction: 1 | -1) => {
+    if (!selectedUnit) {
+      setQuantity((q) => Math.max(1, q + direction));
+      return;
+    }
+
+    const nextCartQuantity = Math.max(0, cartQuantity + direction);
+    setIsUpdatingCart(true);
+    try {
       await setVariantQuantity(selectedUnit.id, nextCartQuantity);
-      setQuantity(nextDisplayQuantity);
+      if (nextCartQuantity === 0) setQuantity(1);
     } catch (error) {
       if (error instanceof Error && error.message === "unauthenticated") {
         alert("Please log in to update your cart.");
@@ -186,25 +193,36 @@ const ProductDetailsPage = () => {
               <p className={styles.taxNote}>(Inclusive of all taxes)</p>
             </div>
 
-            <div className={styles.quantityControl} aria-label="Quantity">
+            {cartQuantity > 0 ? (
+              <div className={styles.quantityControl} aria-label="Quantity">
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  disabled={isUpdatingCart}
+                  onClick={() => handleQuantityChange(-1)}
+                >
+                  −
+                </button>
+                <span>{cartQuantity}</span>
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  disabled={isUpdatingCart}
+                  onClick={() => handleQuantityChange(1)}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                aria-label="Decrease quantity"
+                className={styles.addToCartBtn}
                 disabled={isUpdatingCart}
-                onClick={() => handleQuantityChange(-1)}
+                onClick={() => handleAddToCart(1)}
               >
-                −
+                {isUpdatingCart ? "Adding…" : "Add to Cart"}
               </button>
-              <span>{displayedQuantity}</span>
-              <button
-                type="button"
-                aria-label="Increase quantity"
-                disabled={isUpdatingCart}
-                onClick={() => handleQuantityChange(1)}
-              >
-                +
-              </button>
-            </div>
+            )}
           </div>
         </section>
       </main>
