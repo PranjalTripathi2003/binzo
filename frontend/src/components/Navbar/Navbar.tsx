@@ -165,7 +165,6 @@ const Navbar = () => {
             </span>
             <span className={styles.deliveryLocation}>
               {locationLabel}
-              <i className="fa-solid fa-caret-down" aria-hidden="true" />
             </span>
           </button>
         </div>

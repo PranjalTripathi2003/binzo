@@ -3,12 +3,6 @@ import { useNavigate } from "react-router-dom";
 import styles from "./ProductCard.module.css";
 import { useCart } from "../../context/CartContext";
 
-/**
- * Learning TODO:
- * - ProductCard is the right place to call services/cart.ts addToCart().
- * - To do that cleanly, pass a variantId prop from ProductSection using
- *   product.units[0].id, then send { variant_id: variantId, quantity: 1 }.
- */
 type ProductCardProps = {
   productId: string;
   variantId: string;
@@ -27,8 +21,9 @@ const ProductCard = ({
   price,
 }: ProductCardProps) => {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  const [adding, setAdding] = useState(false);
+  const { addToCart, getVariantQuantity, setVariantQuantity } = useCart();
+  const cartQuantity = getVariantQuantity(variantId);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const openProductDetails = () => {
     navigate(`/product/${productId}`);
@@ -57,26 +52,80 @@ const ProductCard = ({
       <div className={styles.bottom}>
         <span className={styles.price}>₹{price}</span>
 
-        <button
-          className={styles.button}
-          type="button"
-          disabled={adding}
-          onClick={async (event) => {
-            event.stopPropagation();
-            setAdding(true);
-            try {
-              await addToCart(variantId);
-            } catch (err) {
-              if (err instanceof Error && err.message === "unauthenticated") {
-                alert("Please log in to add items to your cart.");
+        {cartQuantity > 0 ? (
+          <div className={styles.quantityControlCard}>
+            <button
+              type="button"
+              className={styles.qtyButton}
+              disabled={isUpdating}
+              onClick={async (event) => {
+                event.stopPropagation();
+                setIsUpdating(true);
+                try {
+                  await setVariantQuantity(variantId, cartQuantity - 1);
+                } catch (err) {
+                  if (
+                    err instanceof Error &&
+                    err.message === "unauthenticated"
+                  ) {
+                    alert("Please log in to update your cart.");
+                  }
+                } finally {
+                  setIsUpdating(false);
+                }
+              }}
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className={styles.qtyValue}>{cartQuantity}</span>
+            <button
+              type="button"
+              className={styles.qtyButton}
+              disabled={isUpdating}
+              onClick={async (event) => {
+                event.stopPropagation();
+                setIsUpdating(true);
+                try {
+                  await setVariantQuantity(variantId, cartQuantity + 1);
+                } catch (err) {
+                  if (
+                    err instanceof Error &&
+                    err.message === "unauthenticated"
+                  ) {
+                    alert("Please log in to update your cart.");
+                  }
+                } finally {
+                  setIsUpdating(false);
+                }
+              }}
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        ) : (
+          <button
+            className={styles.button}
+            type="button"
+            disabled={isUpdating}
+            onClick={async (event) => {
+              event.stopPropagation();
+              setIsUpdating(true);
+              try {
+                await addToCart(variantId);
+              } catch (err) {
+                if (err instanceof Error && err.message === "unauthenticated") {
+                  alert("Please log in to add items to your cart.");
+                }
+              } finally {
+                setIsUpdating(false);
               }
-            } finally {
-              setAdding(false);
-            }
-          }}
-        >
-          {adding ? "…" : "Add"}
-        </button>
+            }}
+          >
+            {isUpdating ? "…" : "Add"}
+          </button>
+        )}
       </div>
     </div>
   );
