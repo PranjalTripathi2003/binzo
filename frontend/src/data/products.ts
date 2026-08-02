@@ -3,6 +3,7 @@ export type ProductUnit = {
   label: string;
   size: string;
   price: number;
+  images?: string[];
 };
 
 export type Product = {

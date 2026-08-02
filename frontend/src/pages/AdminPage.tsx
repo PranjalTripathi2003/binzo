@@ -27,8 +27,12 @@ type VariantDraft = {
   unit: string;
   price: string;
   stock: string;
-  image_url: string;
   note: string;
+  images: ProductImageDraft[];
+};
+
+type ProductImageDraft = {
+  image_url: string;
   imageFile: File | null;
   imagePreview: string;
 };
@@ -37,10 +41,14 @@ const emptyVariant = (): VariantDraft => ({
   unit: "",
   price: "",
   stock: "",
-  image_url: "",
   note: "",
+  images: [],
+});
+
+const productImageDraftFromUrl = (imageUrl: string): ProductImageDraft => ({
+  image_url: imageUrl,
   imageFile: null,
-  imagePreview: "",
+  imagePreview: imageUrl,
 });
 
 // ─────────────────────────────────────────────
@@ -74,6 +82,7 @@ const AdminPage = () => {
   const [prodBrand, setProdBrand] = useState("");
   const [prodDesc, setProdDesc] = useState("");
   const [prodCategoryId, setProdCategoryId] = useState("");
+  const [productImages, setProductImages] = useState<ProductImageDraft[]>([]);
   const [variants, setVariants] = useState<VariantDraft[]>([emptyVariant()]);
   const [prodSubmitting, setProdSubmitting] = useState(false);
   const [prodError, setProdError] = useState("");
@@ -178,6 +187,7 @@ const AdminPage = () => {
     setProdBrand("");
     setProdDesc("");
     setProdCategoryId("");
+    setProductImages([]);
     setVariants([emptyVariant()]);
     setProdError("");
     setEditingProductId(null);
@@ -185,20 +195,39 @@ const AdminPage = () => {
 
   const resolveVariantDrafts = async () =>
     Promise.all(
-      variants.map(async (v) => {
-        let image_url = v.image_url;
-        if (v.imageFile) {
-          image_url = await uploadProductImage(v.imageFile);
-        }
+      variants.map(async (variant) => {
+        const image_urls = (
+          await Promise.all(
+            variant.images.map(async (image) => {
+              if (image.imageFile) {
+                return uploadProductImage(image.imageFile);
+              }
+
+              return image.image_url;
+            }),
+          )
+        ).filter((imageUrl) => imageUrl.trim().length > 0);
 
         return {
-          id: v.id,
-          unit: v.unit.trim(),
-          price: parseFloat(v.price),
-          stock: v.stock ? parseInt(v.stock, 10) : 0,
-          image_url: image_url || undefined,
-          note: v.note.trim() || undefined,
+          id: variant.id,
+          unit: variant.unit.trim(),
+          price: parseFloat(variant.price),
+          stock: variant.stock ? parseInt(variant.stock, 10) : 0,
+          image_urls: image_urls.length > 0 ? image_urls : undefined,
+          image_url: image_urls[0] || undefined,
+          note: variant.note.trim() || undefined,
         };
+      }),
+    );
+
+  const resolveProductImageDrafts = async () =>
+    Promise.all(
+      productImages.map(async (image) => {
+        if (image.imageFile) {
+          return uploadProductImage(image.imageFile);
+        }
+
+        return image.image_url;
       }),
     );
 
@@ -208,18 +237,35 @@ const AdminPage = () => {
     setProdBrand(product.brand ?? "");
     setProdDesc(product.description ?? "");
     setProdCategoryId(product.category_id);
+    setProductImages(
+      (product.product_images ?? [])
+        .sort((a, b) => a.position - b.position)
+        .map((image) => productImageDraftFromUrl(image.image_url)),
+    );
     setVariants(
       product.product_variants.length > 0
-        ? product.product_variants.map((variant) => ({
-            id: variant.id,
-            unit: variant.unit,
-            price: String(variant.price),
-            stock: String(variant.stock),
-            image_url: variant.image_url ?? "",
-            note: variant.note ?? "",
-            imageFile: null,
-            imagePreview: variant.image_url ?? "",
-          }))
+        ? product.product_variants.map((variant) => {
+            const variantImages = (variant.product_variant_images ?? [])
+              .slice()
+              .sort((a, b) => a.position - b.position)
+              .map((image) => productImageDraftFromUrl(image.image_url));
+
+            const fallbackImages =
+              variantImages.length > 0
+                ? variantImages
+                : variant.image_url
+                  ? [productImageDraftFromUrl(variant.image_url)]
+                  : [];
+
+            return {
+              id: variant.id,
+              unit: variant.unit,
+              price: String(variant.price),
+              stock: String(variant.stock),
+              note: variant.note ?? "",
+              images: fallbackImages,
+            };
+          })
         : [emptyVariant()],
     );
     setProdError("");
@@ -237,12 +283,14 @@ const AdminPage = () => {
     try {
       const resolvedVariants =
         (await resolveVariantDrafts()) as CreateProductVariantInput[];
+      const resolvedProductImages = await resolveProductImageDrafts();
 
       const product = await createProduct({
         category_id: prodCategoryId,
         name: prodName.trim(),
         brand: prodBrand.trim() || undefined,
         description: prodDesc.trim() || undefined,
+        image_urls: resolvedProductImages,
         variants: resolvedVariants,
       });
 
@@ -267,11 +315,13 @@ const AdminPage = () => {
     try {
       const resolvedVariants =
         (await resolveVariantDrafts()) as UpdateProductVariantInput[];
+      const resolvedProductImages = await resolveProductImageDrafts();
       const product = await updateProduct(editingProductId, {
         category_id: prodCategoryId,
         name: prodName.trim(),
         brand: prodBrand.trim() || undefined,
         description: prodDesc.trim() || undefined,
+        image_urls: resolvedProductImages,
         variants: resolvedVariants,
       });
 
@@ -304,18 +354,55 @@ const AdminPage = () => {
     );
   };
 
-  const handleVariantImage = (index: number, file: File | null) => {
-    if (!file) return;
-    const preview = URL.createObjectURL(file);
+  const handleVariantImages = (index: number, files: FileList | null) => {
+    if (!files) return;
+
+    const nextImages = Array.from(files).map((file) => ({
+      image_url: "",
+      imageFile: file,
+      imagePreview: URL.createObjectURL(file),
+    }));
+
     setVariants((prev) =>
-      prev.map((v, i) =>
-        i === index ? { ...v, imageFile: file, imagePreview: preview } : v,
+      prev.map((variant, variantIndex) =>
+        variantIndex === index
+          ? { ...variant, images: [...variant.images, ...nextImages] }
+          : variant,
+      ),
+    );
+  };
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    setVariants((prev) =>
+      prev.map((variant, index) =>
+        index === variantIndex
+          ? {
+              ...variant,
+              images: variant.images.filter((_, i) => i !== imageIndex),
+            }
+          : variant,
       ),
     );
   };
 
   const removeVariant = (index: number) => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleProductImages = (files: FileList | null) => {
+    if (!files) return;
+
+    const nextImages = Array.from(files).map((file) => ({
+      image_url: "",
+      imageFile: file,
+      imagePreview: URL.createObjectURL(file),
+    }));
+
+    setProductImages((prev) => [...prev, ...nextImages]);
+  };
+
+  const removeProductImage = (index: number) => {
+    setProductImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   // ── Slug auto-generate ───────────────────────────────────
@@ -838,6 +925,49 @@ const AdminPage = () => {
                 </div>
               </div>
 
+              <div className={styles.productImagesSection}>
+                <div className={styles.variantHeader}>
+                  <h3 className={styles.formCardTitle}>Product Images</h3>
+                  <label className={styles.addVariantBtn} htmlFor="product-images">
+                    <i className="fa-solid fa-images" />
+                    Add Images
+                  </label>
+                  <input
+                    id="product-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className={styles.fileInputHidden}
+                    onChange={(e) => {
+                      handleProductImages(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+
+                {productImages.length > 0 ? (
+                  <div className={styles.productImageGrid}>
+                    {productImages.map((image, index) => (
+                      <div key={`${image.imagePreview}-${index}`} className={styles.productImagePreview}>
+                        <img src={image.imagePreview} alt={`Product preview ${index + 1}`} />
+                        <button
+                          type="button"
+                          onClick={() => removeProductImage(index)}
+                          aria-label={`Remove product image ${index + 1}`}
+                        >
+                          <i className="fa-solid fa-xmark" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.productImageEmpty}>
+                    <i className="fa-solid fa-image" aria-hidden="true" />
+                    Upload one or more product photos for the card and detail gallery.
+                  </div>
+                )}
+              </div>
+
               {/* Variants */}
               <div className={styles.sectionDivider} />
               <div className={styles.variantHeader}>
@@ -860,19 +990,37 @@ const AdminPage = () => {
                     <span>{idx + 1}</span>
                   </div>
 
-                  {/* Image upload */}
+                  {/* Variant images */}
                   <div className={styles.variantImageBox}>
                     <label
                       htmlFor={`variant-img-${idx}`}
                       className={styles.imageUploadLabel}
-                      title="Click to upload image"
+                      title="Click to upload variant images"
                     >
-                      {variant.imagePreview ? (
-                        <img
-                          src={variant.imagePreview}
-                          alt="Preview"
-                          className={styles.imagePreview}
-                        />
+                      {variant.images.length > 0 ? (
+                        <div className={styles.variantImageGrid}>
+                          {variant.images.map((image, imageIndex) => (
+                            <div
+                              key={`${image.imagePreview}-${imageIndex}`}
+                              className={styles.variantImagePreview}
+                            >
+                              <img
+                                src={image.imagePreview}
+                                alt={`Variant ${idx + 1} preview ${imageIndex + 1}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  removeVariantImage(idx, imageIndex);
+                                }}
+                                aria-label={`Remove variant ${idx + 1} image ${imageIndex + 1}`}
+                              >
+                                <i className="fa-solid fa-xmark" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <div className={styles.imagePlaceholder}>
                           <i className="fa-solid fa-image" />
@@ -884,10 +1032,12 @@ const AdminPage = () => {
                       id={`variant-img-${idx}`}
                       type="file"
                       accept="image/*"
+                      multiple
                       className={styles.fileInputHidden}
-                      onChange={(e) =>
-                        handleVariantImage(idx, e.target.files?.[0] ?? null)
-                      }
+                      onChange={(e) => {
+                        handleVariantImages(idx, e.target.files);
+                        e.target.value = "";
+                      }}
                     />
                   </div>
 

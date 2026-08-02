@@ -35,6 +35,11 @@ export class UpdateProductVariantDto {
   @IsOptional()
   image_url?: string;
 
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  image_urls?: string[];
+
   @IsString()
   @IsOptional()
   note?: string;
@@ -43,8 +48,9 @@ export class UpdateProductVariantDto {
 /**
  * Request body for updating an existing product row.
  *
- * All fields are optional. Product fields update the products table; variants
- * update product_variants rows for the same product.
+ * All fields are optional. Product fields update the products table;
+ * image_urls replace product_images rows; variants update product_variants rows
+ * for the same product.
  */
 export class UpdateProductDto {
   @IsString()
@@ -62,6 +68,11 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   brand?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  image_urls?: string[];
 
   @IsArray()
   @ValidateNested({ each: true })

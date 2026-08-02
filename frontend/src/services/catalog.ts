@@ -13,52 +13,105 @@ type CategoryDto = {
   image_url?: string | null;
 };
 
+type ProductVariantImageDto = {
+  image_url: string;
+  position: number;
+};
+
 type ProductVariantDto = {
   id: string;
   unit: string;
   price: string | number;
   image_url?: string | null;
+  product_variant_images?: ProductVariantImageDto[];
+};
+
+type ProductImageDto = {
+  image_url: string;
+  position: number;
 };
 
 type ProductDto = {
   id: string;
   name: string;
   product_variants?: ProductVariantDto[];
+  product_images?: ProductImageDto[];
 };
 
 const fallbackImage = "/images/milk.png";
 const fallbackCategoryImage = "";
+const staticCategoryImages: Record<string, string> = {
+  "Dairy, Bread & Eggs": "/images/dairy-bread-eggs.png",
+  "Fruits & Vegetables": "/images/fruits-and-vegetables.png",
+  "Cold Drinks & Juices": "/images/cold-drink-and-juices.png",
+  "Snacks & Munchies": "/images/snack-and-munchies.png",
+  "Sweet Tooth": "/images/sweet-tooth.png",
+  "Tea, Coffee & Milk Drinks": "/images/tea-coffee-milk.png",
+  "Chicken, Meat & Fish": "/images/chicken-meat-fish.png",
+  "Cleaning Essentials": "/images/cleaning-essentials.png",
+};
+
+const getVariantImageUrls = (variant: ProductVariantDto): string[] => {
+  const galleryImages = (variant.product_variant_images ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((image) => image.image_url)
+    .filter((image): image is string => Boolean(image));
+
+  if (galleryImages.length > 0) {
+    return galleryImages;
+  }
+
+  return variant.image_url ? [variant.image_url] : [];
+};
 
 const toProductUnit = (
   variant: ProductVariantDto,
   index: number,
-): ProductUnit => ({
-  id: variant.id,
-  label: `Unit ${index + 1}`,
-  size: variant.unit,
-  price: Number(variant.price),
-});
+): ProductUnit => {
+  const images = getVariantImageUrls(variant);
+
+  return {
+    id: variant.id,
+    label: `Unit ${index + 1}`,
+    size: variant.unit,
+    price: Number(variant.price),
+    images: images.length > 0 ? images : undefined,
+  };
+};
 
 const toProduct = (product: ProductDto): Product => {
   const variants = product.product_variants ?? [];
-  const firstImage = variants.find((variant) => variant.image_url)?.image_url;
-  const images = variants
-    .map((variant) => variant.image_url)
+  const units = variants.map(toProductUnit);
+  const productImages = (product.product_images ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((image) => image.image_url)
     .filter((image): image is string => Boolean(image));
+  const firstVariantImages = units[0]?.images ?? [];
+  const images =
+    firstVariantImages.length > 0
+      ? firstVariantImages
+      : productImages.length > 0
+        ? productImages
+        : [fallbackImage];
 
   return {
     id: product.id,
     title: product.name,
-    image: firstImage ?? fallbackImage,
-    images: images.length > 0 ? images : [fallbackImage],
-    units: variants.map(toProductUnit),
+    image: images[0] ?? fallbackImage,
+    images,
+    units,
   };
 };
 
 const toCategory = (category: CategoryDto): Category => ({
   id: category.id,
   title: category.name,
-  image: category.image_url ?? fallbackCategoryImage,
+  image:
+    category.image_url ??
+    staticCategoryImages[category.name] ??
+    fallbackCategoryImage,
 });
 
 export async function getCategories(): Promise<Category[]> {

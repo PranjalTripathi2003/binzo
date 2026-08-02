@@ -32,13 +32,19 @@ export class CreateProductVariantDto {
   @IsOptional()
   image_url?: string;
 
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  image_urls?: string[];
+
   @IsString()
   @IsOptional()
   note?: string;
 }
 
 /**
- * Request body for creating a products row and its product_variants rows.
+ * Request body for creating a products row, product_images gallery rows, and
+ * product_variants rows.
  */
 export class CreateProductDto {
   @IsString()
@@ -56,6 +62,11 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   brand?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  image_urls?: string[];
 
   @IsArray()
   @ValidateNested({ each: true })

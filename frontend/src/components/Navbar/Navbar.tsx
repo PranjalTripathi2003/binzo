@@ -19,9 +19,19 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [deliveryMinutes] = useState(() => {
+    const storedMinutes = sessionStorage.getItem("delivery_minutes");
+    if (storedMinutes) return Number(storedMinutes);
+
+    const minutes = Math.floor(Math.random() * 26) + 5;
+    sessionStorage.setItem("delivery_minutes", String(minutes));
+    return minutes;
+  });
+  const [locationLabel, setLocationLabel] = useState("Detecting location...");
+  const [locationRequestId, setLocationRequestId] = useState(0);
   const navigate = useNavigate();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
-  const { itemCount, refreshCart } = useCart();
+  const { itemCount, totalAmount, refreshCart } = useCart();
 
   useEffect(() => {
     document.body.style.overflow = isCartOpen ? "hidden" : "";
@@ -64,6 +74,55 @@ const Navbar = () => {
       .catch(() => setUser(null));
   }, []);
 
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("delivery_location_label");
+    if (savedLocation && locationRequestId === 0) {
+      setLocationLabel(savedLocation);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setLocationLabel("Set delivery location");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+          );
+          const data = await response.json();
+          const address = data.address ?? {};
+          const locality =
+            address.neighbourhood ??
+            address.suburb ??
+            address.city_district ??
+            address.city ??
+            address.town ??
+            address.village;
+          const region = address.state ?? address.county;
+          const nextLabel = [locality, region].filter(Boolean).join(", ");
+
+          if (nextLabel) {
+            localStorage.setItem("delivery_location_label", nextLabel);
+            setLocationLabel(nextLabel);
+          } else {
+            setLocationLabel("Location detected");
+          }
+        } catch {
+          setLocationLabel("Location detected");
+        }
+      },
+      () => {
+        setLocationLabel("Set delivery location");
+      },
+      { enableHighAccuracy: false, maximumAge: 600000, timeout: 8000 },
+    );
+  }, [locationRequestId]);
+
   const handleAuthSuccess = (loggedInUser: AuthUser) => {
     setUser(loggedInUser);
     setIsAccountOpen(false);
@@ -91,7 +150,24 @@ const Navbar = () => {
               zo
             </span>
           </h1>
-          <p className={styles.delivery}>Delivery in 10 minutes</p>
+          <button
+            type="button"
+            className={styles.delivery}
+            onClick={() => {
+              localStorage.removeItem("delivery_location_label");
+              setLocationLabel("Detecting location...");
+              setLocationRequestId((current) => current + 1);
+            }}
+            aria-label="Detect delivery location"
+          >
+            <span className={styles.deliveryTime}>
+              Delivery in {deliveryMinutes} minutes
+            </span>
+            <span className={styles.deliveryLocation}>
+              {locationLabel}
+              <i className="fa-solid fa-caret-down" aria-hidden="true" />
+            </span>
+          </button>
         </div>
 
         <div className={styles.center}>
@@ -168,7 +244,9 @@ const Navbar = () => {
           )}
 
           <button
-            className={styles.cartButton}
+            className={`${styles.cartButton} ${
+              itemCount > 0 ? styles.cartButtonActive : ""
+            }`}
             onClick={() => {
               setIsAccountOpen(false);
               setIsCartOpen(true);
@@ -176,9 +254,13 @@ const Navbar = () => {
             }}
           >
             <i className="fa-solid fa-cart-shopping"></i>
-            My Cart
-            {itemCount > 0 && (
-              <span className={styles.cartBadge}>{itemCount}</span>
+            {itemCount > 0 ? (
+              <span className={styles.cartSummary}>
+                <strong>{itemCount} {itemCount === 1 ? "item" : "items"}</strong>
+                <span>₹{totalAmount}</span>
+              </span>
+            ) : (
+              "My Cart"
             )}
           </button>
         </div>

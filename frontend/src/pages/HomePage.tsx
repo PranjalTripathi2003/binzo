@@ -10,14 +10,42 @@ import { getCategories, getProducts, type Category } from "../services/catalog";
 import styles from "./HomePage.module.css";
 
 const fallbackCategories: Category[] = [
-  { id: "dairy", title: "Dairy, Bread & Eggs", image: "" },
-  { id: "fruits", title: "Fruits & Vegetables", image: "" },
-  { id: "drinks", title: "Cold Drinks & Juices", image: "" },
-  { id: "snacks", title: "Snacks & Munchies", image: "" },
-  { id: "sweets", title: "Sweet Tooth", image: "" },
-  { id: "tea", title: "Tea, Coffee & Milk Drinks", image: "" },
-  { id: "meat", title: "Chicken, Meat & Fish", image: "" },
-  { id: "cleaning", title: "Cleaning Essentials", image: "" },
+  {
+    id: "dairy",
+    title: "Dairy, Bread & Eggs",
+    image: "/images/dairy-bread-eggs.png",
+  },
+  {
+    id: "fruits",
+    title: "Fruits & Vegetables",
+    image: "/images/fruits-and-vegetables.png",
+  },
+  {
+    id: "drinks",
+    title: "Cold Drinks & Juices",
+    image: "/images/cold-drink-and-juices.png",
+  },
+  {
+    id: "snacks",
+    title: "Snacks & Munchies",
+    image: "/images/snack-and-munchies.png",
+  },
+  { id: "sweets", title: "Sweet Tooth", image: "/images/sweet-tooth.png" },
+  {
+    id: "tea",
+    title: "Tea, Coffee & Milk Drinks",
+    image: "/images/tea-coffee-milk.png",
+  },
+  {
+    id: "meat",
+    title: "Chicken, Meat & Fish",
+    image: "/images/chicken-meat-fish.png",
+  },
+  {
+    id: "cleaning",
+    title: "Cleaning Essentials",
+    image: "/images/cleaning-essentials.png",
+  },
 ];
 
 const HomePage = () => {

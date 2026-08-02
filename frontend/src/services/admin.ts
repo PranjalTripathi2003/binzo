@@ -12,6 +12,14 @@ export type Category = {
   created_at: string;
 };
 
+export type ProductVariantImage = {
+  id: string;
+  variant_id: string;
+  image_url: string;
+  position: number;
+  created_at: string;
+};
+
 export type ProductVariant = {
   id: string;
   product_id: string;
@@ -20,6 +28,15 @@ export type ProductVariant = {
   stock: number;
   image_url?: string | null;
   note?: string | null;
+  product_variant_images?: ProductVariantImage[];
+};
+
+export type ProductImage = {
+  id: string;
+  product_id: string;
+  image_url: string;
+  position: number;
+  created_at: string;
 };
 
 export type Product = {
@@ -31,6 +48,7 @@ export type Product = {
   created_at: string;
   updated_at: string;
   product_variants: ProductVariant[];
+  product_images?: ProductImage[];
 };
 
 export type CreateProductVariantInput = {
@@ -38,6 +56,7 @@ export type CreateProductVariantInput = {
   price: number;
   stock?: number;
   image_url?: string;
+  image_urls?: string[];
   note?: string;
 };
 
@@ -47,6 +66,7 @@ export type UpdateProductVariantInput = {
   price: number;
   stock?: number;
   image_url?: string;
+  image_urls?: string[];
   note?: string;
 };
 
@@ -55,6 +75,7 @@ export type CreateProductInput = {
   name: string;
   description?: string;
   brand?: string;
+  image_urls?: string[];
   variants: CreateProductVariantInput[];
 };
 
@@ -63,6 +84,7 @@ export type UpdateProductInput = {
   name?: string;
   description?: string;
   brand?: string;
+  image_urls?: string[];
   variants?: UpdateProductVariantInput[];
 };
 

@@ -14,6 +14,22 @@ type ProductVariantRow = {
   note: string | null;
 };
 
+type ProductImageRow = {
+  id: string;
+  product_id: string;
+  image_url: string;
+  position: number;
+  created_at: string;
+};
+
+type ProductVariantImageRow = {
+  id: string;
+  variant_id: string;
+  image_url: string;
+  position: number;
+  created_at: string;
+};
+
 type ProductRow = {
   id: string;
   category_id: string;
@@ -25,30 +41,35 @@ type ProductRow = {
 };
 
 type ProductWithVariants = ProductRow & {
-  product_variants: ProductVariantRow[];
+  product_variants: (ProductVariantRow & {
+    product_variant_images?: ProductVariantImageRow[];
+  })[];
+  product_images: ProductImageRow[];
 };
 
 /**
- * Database logic for products and product_variants.
+ * Database logic for products, product_images, and product_variants.
  *
  * products stores the catalog item itself. product_variants stores purchasable
  * units such as 500ml, 1L, or 1kg with price, stock, and image_url.
+ * product_images stores the product-level gallery used by cards and details.
  */
 @Injectable()
 export class ProductService {
   constructor(private supabaseService: SupabaseService) {}
 
   /**
-   * Reads all products with their nested variants.
+   * Reads all products with their nested variants and product gallery images.
    *
    * The relation select `product_variants(*)` is what gives the frontend enough
-   * data to show prices, unit sizes, and product images without extra requests.
+   * data to show prices and unit sizes; `product_images(*)` gives the frontend
+   * card/detail gallery images without extra requests.
    */
   async findAll(categoryId?: string): Promise<ProductWithVariants[]> {
     let query = this.supabaseService
       .getClient()
       .from('products')
-      .select('*, product_variants(*)')
+      .select('*, product_variants(*, product_variant_images(*)), product_images(*)')
       .order('name', { ascending: true });
 
     if (categoryId) {
@@ -62,7 +83,7 @@ export class ProductService {
   }
 
   /**
-   * Reads one product by UUID with all variants.
+   * Reads one product by UUID with all variants and product gallery images.
    *
    * Used by the product detail page. PGRST116 means no matching row.
    */
@@ -70,7 +91,7 @@ export class ProductService {
     const { data, error } = await this.supabaseService
       .getClient()
       .from('products')
-      .select('*, product_variants(*)')
+      .select('*, product_variants(*, product_variant_images(*)), product_images(*)')
       .eq('id', id)
       .returns<ProductWithVariants>()
       .single();
@@ -86,15 +107,16 @@ export class ProductService {
   }
 
   /**
-   * Creates a product plus its variants.
+   * Creates a product plus its gallery images and variants.
    *
    * The product must be inserted first so Supabase generates products.id. That
-   * id is then copied into each variant as product_variants.product_id.
+   * id is then copied into product_images.product_id and each
+   * product_variants.product_id.
    */
   async create(
     createProductDto: CreateProductDto,
   ): Promise<ProductWithVariants> {
-    const { variants, ...productData } = createProductDto;
+    const { variants, image_urls, ...productData } = createProductDto;
 
     const createResult = (await this.supabaseService
       .getClient()
@@ -115,10 +137,16 @@ export class ProductService {
 
     const product = createResult.data;
 
-    const variantsWithProductId = variants.map((variant) => ({
-      ...variant,
+    const variantImageUrls = new Map<number, string[]>();
+    const variantsWithProductId = variants.map((variant, index) => {
+      const { image_urls, ...variantFields } = variant;
+      variantImageUrls.set(index, image_urls ?? []);
+
+      return {
+        ...variantFields,
       product_id: product.id,
-    }));
+      };
+    });
 
     const { data: productVariants, error: productVariantError } =
       await this.supabaseService
@@ -134,24 +162,35 @@ export class ProductService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    return {
-      ...product,
-      product_variants: productVariants,
-    };
+
+    await Promise.all(
+      (productVariants ?? []).map((variant, index) =>
+        this.replaceVariantImages(
+          variant.id,
+          variantImageUrls.get(index) ?? [],
+        ),
+      ),
+    );
+
+    if (image_urls && image_urls.length > 0) {
+      await this.replaceProductImages(product.id, image_urls);
+    }
+
+    return this.findOne(product.id);
   }
 
   /**
    * Updates editable fields on an existing product and, when supplied, its
    * variants.
    *
-   * Tables touched: products and product_variants. Existing variant ids in the
-   * payload are updated, new variants are inserted, and omitted existing
-   * variants are removed from this product.
+   * Tables touched: products, product_images, and product_variants. image_urls
+   * replaces the gallery. Existing variant ids in the payload are updated, new
+   * variants are inserted, and omitted existing variants are removed.
    */
   async update(id: string, dto: UpdateProductDto): Promise<ProductWithVariants> {
     await this.findOne(id);
 
-    const { variants, ...productFields } = dto;
+    const { variants, image_urls, ...productFields } = dto;
 
     const { data, error } = await this.supabaseService
       .getClient()
@@ -166,7 +205,14 @@ export class ProductService {
     }
 
     if (!variants) {
+      if (image_urls) {
+        await this.replaceProductImages(id, image_urls);
+      }
       return this.findOne(id);
+    }
+
+    if (image_urls) {
+      await this.replaceProductImages(id, image_urls);
     }
 
     const existingVariants = await this.getVariantsForProduct(id);
@@ -198,7 +244,7 @@ export class ProductService {
     }
 
     for (const variant of variants) {
-      const { id: variantId, ...variantFields } = variant;
+      const { id: variantId, image_urls, ...variantFields } = variant;
 
       if (variantId && existingVariantIds.has(variantId)) {
         const { error: updateError } = await this.supabaseService
@@ -214,13 +260,18 @@ export class ProductService {
             HttpStatus.INTERNAL_SERVER_ERROR,
           );
         }
+        if (image_urls) {
+          await this.replaceVariantImages(variantId, image_urls);
+        }
         continue;
       }
 
-      const { error: insertError } = await this.supabaseService
+      const { data: insertedVariant, error: insertError } = await this.supabaseService
         .getClient()
         .from('product_variants')
-        .insert([{ ...variantFields, product_id: id }]);
+        .insert([{ ...variantFields, product_id: id }])
+        .select()
+        .single();
 
       if (insertError) {
         throw new HttpException(
@@ -228,9 +279,112 @@ export class ProductService {
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
+
+      if (image_urls) {
+        await this.replaceVariantImages(
+          (insertedVariant as ProductVariantRow).id,
+          image_urls,
+        );
+      }
     }
 
     return this.findOne((data as ProductRow).id);
+  }
+
+  /**
+   * Replaces the product_variant_images gallery for one variant.
+   *
+   * Tables touched: product_variant_images. Used when admins create or edit
+   * variant-specific image sets.
+   */
+  private async replaceVariantImages(
+    variantId: string,
+    imageUrls: string[],
+  ): Promise<void> {
+    const { error: deleteError } = await this.supabaseService
+      .getClient()
+      .from('product_variant_images')
+      .delete()
+      .eq('variant_id', variantId);
+
+    if (deleteError) {
+      throw new HttpException(
+        deleteError.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const rows = imageUrls
+      .filter((imageUrl) => imageUrl.trim().length > 0)
+      .map((imageUrl, index) => ({
+        variant_id: variantId,
+        image_url: imageUrl,
+        position: index,
+      }));
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    const { error: insertError } = await this.supabaseService
+      .getClient()
+      .from('product_variant_images')
+      .insert(rows);
+
+    if (insertError) {
+      throw new HttpException(
+        insertError.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Replaces the product_images gallery for one product.
+   *
+   * Tables touched: product_images. Existing rows are deleted then reinserted
+   * with fresh positions so the frontend can render the uploaded order.
+   */
+  private async replaceProductImages(
+    productId: string,
+    imageUrls: string[],
+  ): Promise<void> {
+    const { error: deleteError } = await this.supabaseService
+      .getClient()
+      .from('product_images')
+      .delete()
+      .eq('product_id', productId);
+
+    if (deleteError) {
+      throw new HttpException(
+        deleteError.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const rows = imageUrls
+      .filter((imageUrl) => imageUrl.trim().length > 0)
+      .map((imageUrl, index) => ({
+        product_id: productId,
+        image_url: imageUrl,
+        position: index,
+      }));
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    const { error: insertError } = await this.supabaseService
+      .getClient()
+      .from('product_images')
+      .insert(rows);
+
+    if (insertError) {
+      throw new HttpException(
+        insertError.message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**

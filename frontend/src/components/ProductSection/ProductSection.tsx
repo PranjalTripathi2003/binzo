@@ -17,6 +17,8 @@ const ProductSection = ({ products }: ProductSectionProps) => {
   const pantryProducts = products.slice(8, 16);
   const secondRowProducts =
     pantryProducts.length > 0 ? pantryProducts : featuredProducts;
+  const showFirstRowArrows = featuredProducts.length > 5;
+  const showSecondRowArrows = secondRowProducts.length > 5;
 
   const handleScrollRight = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
@@ -35,7 +37,7 @@ const ProductSection = ({ products }: ProductSectionProps) => {
       <h2 className={styles.heading}> Dairy, Bread & Eggs</h2>
 
       <div className={styles.carouselWrapper}>
-        {scrolled1 && (
+        {showFirstRowArrows && scrolled1 && (
           <button
             className={styles.arrowBtnLeft}
             onClick={() => handleScrollLeft(rowRef1)}
@@ -60,16 +62,18 @@ const ProductSection = ({ products }: ProductSectionProps) => {
             />
           ))}
         </div>
-        <button
-          className={styles.arrowBtn}
-          onClick={() => handleScrollRight(rowRef1)}
-        >
-          <i className="fa-solid fa-chevron-right"></i>
-        </button>
+        {showFirstRowArrows && (
+          <button
+            className={styles.arrowBtn}
+            onClick={() => handleScrollRight(rowRef1)}
+          >
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
+        )}
       </div>
       <h2 className={styles.heading}> Popular Picks</h2>
       <div className={styles.carouselWrapper}>
-        {scrolled2 && (
+        {showSecondRowArrows && scrolled2 && (
           <button
             className={styles.arrowBtnLeft}
             onClick={() => handleScrollLeft(rowRef2)}
@@ -94,12 +98,14 @@ const ProductSection = ({ products }: ProductSectionProps) => {
             />
           ))}
         </div>
-        <button
-          className={styles.arrowBtn}
-          onClick={() => handleScrollRight(rowRef2)}
-        >
-          <i className="fa-solid fa-chevron-right"></i>
-        </button>
+        {showSecondRowArrows && (
+          <button
+            className={styles.arrowBtn}
+            onClick={() => handleScrollRight(rowRef2)}
+          >
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
+        )}
       </div>
     </section>
   );

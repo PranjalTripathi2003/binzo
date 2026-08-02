@@ -74,10 +74,43 @@
 }
 
 .delivery {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 280px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #000000;
+  cursor: pointer;
+  text-align: left;
+}
+
+.deliveryTime {
   font-size: 1.35rem;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.deliveryLocation {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.25rem;
+  color: #000000;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deliveryLocation i {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
 }
 
 .right {
@@ -194,8 +227,36 @@
   font-weight: 500;
 }
 
+.cartButtonActive {
+  width: 132px;
+  justify-content: flex-start;
+  padding: 0 1rem;
+  background: #dce546;
+  color: #000000;
+  gap: 0.7rem;
+}
+
 .cartButton i {
   font-size: 1.35rem;
+}
+
+.cartSummary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.cartSummary strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.cartSummary span {
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .cartBadge {
@@ -507,7 +568,15 @@
 
   .delivery {
     width: auto;
-    font-size: 1.25rem;
+    max-width: 220px;
+  }
+
+  .deliveryTime {
+    font-size: 1.15rem;
+  }
+
+  .deliveryLocation {
+    font-size: 0.8rem;
   }
 
   .accountButton {
