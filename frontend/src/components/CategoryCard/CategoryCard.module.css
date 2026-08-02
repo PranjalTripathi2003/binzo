@@ -3,16 +3,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 1rem 0.75rem;
+  padding: 1rem 0.85rem;
   border-radius: 8px;
   background-color: #eef2ff;
-  width: 140px;
-  height: 168px;
+  width: 150px;
+  height: 178px;
 }
 
 .image {
-  width: 92px;
-  height: 82px;
+  width: 100px;
+  height: 90px;
   object-fit: contain;
 }
 
@@ -20,15 +20,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 92px;
-  height: 82px;
+  width: 100px;
+  height: 90px;
   border-radius: 16px;
   background: #ffffff;
   color: #4f46e5;
   font-size: 2.5rem;
   box-shadow: 0 10px 22px rgba(79, 70, 229, 0.12);
 }
-
 .title {
   text-align: center;
   margin-top: 0.9rem;

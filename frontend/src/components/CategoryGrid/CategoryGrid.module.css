@@ -1,16 +1,16 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, 140px);
+  grid-template-columns: repeat(4, 150px);
   justify-content: center;
-  gap: 1.5rem 4.5rem;
-  width: min(100% - 4rem, 960px);
+  gap: 1.75rem 4.5rem;
+  width: min(100% - 4rem, 980px);
   margin: 3rem auto 2.5rem;
 }
 
 @media (max-width: 900px) {
   .grid {
-    grid-template-columns: repeat(2, 140px);
-    gap: 1.25rem 2rem;
-    width: min(100% - 2rem, 360px);
+    grid-template-columns: repeat(2, 150px);
+    gap: 1.5rem 2.25rem;
+    width: min(100% - 2rem, 340px);
   }
 }

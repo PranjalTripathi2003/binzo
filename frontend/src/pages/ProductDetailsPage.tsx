@@ -18,7 +18,7 @@ const ProductDetailsPage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
-  const { getVariantQuantity, setVariantQuantity } = useCart();
+  const { addToCart, getVariantQuantity, setVariantQuantity } = useCart();
 
   const selectProduct = (nextProduct: Product | undefined) => {
     setProduct(nextProduct);
@@ -94,14 +94,17 @@ const ProductDetailsPage = () => {
   const displayedQuantity = cartQuantity > 0 ? cartQuantity : quantity;
 
   const handleAddToCart = async (initialQuantity = 1) => {
-    if (!selectedUnit) return;
+    if (!selectedUnit || !product) return;
     setIsUpdatingCart(true);
     try {
-      await setVariantQuantity(selectedUnit.id, initialQuantity);
+      await addToCart(selectedUnit.id, initialQuantity, {
+        name: product.title,
+        unit: selectedUnit.size,
+        price: selectedUnit.price,
+        image_url: selectedImage,
+      });
     } catch (error) {
-      if (error instanceof Error && error.message === "unauthenticated") {
-        alert("Please log in to add items to your cart.");
-      }
+      console.error(error);
     } finally {
       setIsUpdatingCart(false);
     }

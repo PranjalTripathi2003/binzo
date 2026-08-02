@@ -31,6 +31,12 @@ export async function apiFetch<T>(
     headers,
   });
 
+  if (response.status === 401) {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    throw new Error("unauthenticated");
+  }
+
   const json: ApiResponse<T> = await response.json();
 
   if (!response.ok || !json.success) {

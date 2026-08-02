@@ -23,6 +23,9 @@ export type CartItem = {
     unit?: string;
     price?: number | string;
     image_url?: string | null;
+    product_variant_images?: {
+      image_url?: string | null;
+    }[];
     products?: {
       name?: string;
     };

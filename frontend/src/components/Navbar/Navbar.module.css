@@ -154,7 +154,9 @@
   font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms ease, transform 150ms ease;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
 }
 
 .authButton:hover {
@@ -225,6 +227,12 @@
   background: #dce546;
   font-size: 1.45rem;
   font-weight: 500;
+}
+
+.cartButton:disabled {
+  background: #e5e7eb;
+  color: #64748b;
+  cursor: not-allowed;
 }
 
 .cartButtonActive {
@@ -386,20 +394,19 @@
   width: 82px;
   height: 64px;
   border-radius: 14px;
-  background:
-    linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
-    linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
-    linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
   background-color: #f8f8f8;
-  background-position:
-    0 0,
-    0 8px,
-    8px -8px,
-    -8px 0;
-  background-size: 16px 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.itemImageImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 .itemInfo h3 {
   font-size: 1rem;
   font-weight: 600;

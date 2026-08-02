@@ -113,11 +113,14 @@ const ProductCard = ({
               event.stopPropagation();
               setIsUpdating(true);
               try {
-                await addToCart(variantId);
+                await addToCart(variantId, 1, {
+                  name: title,
+                  unit: quantity,
+                  price,
+                  image_url: image,
+                });
               } catch (err) {
-                if (err instanceof Error && err.message === "unauthenticated") {
-                  alert("Please log in to add items to your cart.");
-                }
+                console.error(err);
               } finally {
                 setIsUpdating(false);
               }

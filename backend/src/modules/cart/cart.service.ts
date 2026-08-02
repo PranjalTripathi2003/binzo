@@ -28,7 +28,7 @@ export class CartService {
     const { data, error } = await this.supabaseService
       .getClient()
       .from('cart_items')
-      .select('*, product_variants(*, products(*))')
+      .select('*, product_variants(*, products(*), product_variant_images(*))')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
@@ -73,7 +73,7 @@ export class CartService {
         .from('cart_items')
         .update({ quantity: newQuantity, note: note || existing.note })
         .eq('id', existing.id)
-        .select('*, product_variants(*, products(*))')
+        .select('*, product_variants(*, products(*), product_variant_images(*))')
         .single();
 
       if (updateError) {
@@ -88,7 +88,7 @@ export class CartService {
         .getClient()
         .from('cart_items')
         .insert([{ user_id: userId, variant_id, quantity, note }])
-        .select('*, product_variants(*, products(*))')
+        .select('*, product_variants(*, products(*), product_variant_images(*))')
         .single();
 
       if (insertError) {

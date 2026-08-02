@@ -1,11 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
-import {
-  getCurrentUser,
-  logout,
-  type AuthUser,
-} from "../../services/auth";
+import { getCurrentUser, logout, type AuthUser } from "../../services/auth";
 import AuthModal from "../AuthModal/AuthModal";
 import { useCart } from "../../context/CartContext";
 /**
@@ -31,7 +27,14 @@ const Navbar = () => {
   const [locationRequestId, setLocationRequestId] = useState(0);
   const navigate = useNavigate();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
-  const { itemCount, totalAmount, refreshCart } = useCart();
+  const {
+    itemCount,
+    totalAmount,
+    items,
+    refreshCart,
+    setVariantQuantity,
+    mergeLocalCart,
+  } = useCart();
 
   useEffect(() => {
     document.body.style.overflow = isCartOpen ? "hidden" : "";
@@ -40,6 +43,12 @@ const Navbar = () => {
       document.body.style.overflow = "";
     };
   }, [isCartOpen]);
+
+  useEffect(() => {
+    if (isCartOpen && itemCount === 0) {
+      setIsCartOpen(false);
+    }
+  }, [isCartOpen, itemCount]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -123,9 +132,10 @@ const Navbar = () => {
     );
   }, [locationRequestId]);
 
-  const handleAuthSuccess = (loggedInUser: AuthUser) => {
+  const handleAuthSuccess = async (loggedInUser: AuthUser) => {
     setUser(loggedInUser);
     setIsAccountOpen(false);
+    await mergeLocalCart();
   };
 
   const handleLogout = async () => {
@@ -163,9 +173,7 @@ const Navbar = () => {
             <span className={styles.deliveryTime}>
               Delivery in {deliveryMinutes} minutes
             </span>
-            <span className={styles.deliveryLocation}>
-              {locationLabel}
-            </span>
+            <span className={styles.deliveryLocation}>{locationLabel}</span>
           </button>
         </div>
 
@@ -207,7 +215,10 @@ const Navbar = () => {
                         navigate("/admin");
                       }}
                     >
-                      <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+                      <i
+                        className="fa-solid fa-shield-halved"
+                        aria-hidden="true"
+                      />
                       Admin Panel
                     </button>
                   )}
@@ -246,7 +257,9 @@ const Navbar = () => {
             className={`${styles.cartButton} ${
               itemCount > 0 ? styles.cartButtonActive : ""
             }`}
+            disabled={itemCount === 0}
             onClick={() => {
+              if (itemCount === 0) return;
               setIsAccountOpen(false);
               setIsCartOpen(true);
               refreshCart();
@@ -255,7 +268,9 @@ const Navbar = () => {
             <i className="fa-solid fa-cart-shopping"></i>
             {itemCount > 0 ? (
               <span className={styles.cartSummary}>
-                <strong>{itemCount} {itemCount === 1 ? "item" : "items"}</strong>
+                <strong>
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                </strong>
                 <span>₹{totalAmount}</span>
               </span>
             ) : (
@@ -290,25 +305,74 @@ const Navbar = () => {
                 <div className={styles.deliveryHeader}>
                   <i className="fa-solid fa-stopwatch"></i>
                   <div>
-                    <h2>Delivery in 10 minutes</h2>
-                    {/* TODO(cart): Replace this with the real cart item count from getCart(). */}
-                    <p>Shipment of 1 item</p>
+                    <h2>Delivery in {deliveryMinutes} minutes</h2>
+                    <p>
+                      Shipment of {itemCount}{" "}
+                      {itemCount === 1 ? "item" : "items"}
+                    </p>
                   </div>
                 </div>
 
-                {/* TODO(cart): Replace this placeholder with cart_items returned by services/cart.ts getCart(). */}
-                <div className={styles.cartItem}>
-                  <div className={styles.itemImage}></div>
-                  <div className={styles.itemInfo}>
-                    <h3>Item Name</h3>
-                    <p>Qty.</p>
+                {items.length === 0 ? (
+                  <div className={styles.emptyCartMessage}>
+                    <p>Your cart is empty.</p>
                   </div>
-                  <div className={styles.quantityControl}>
-                    <button aria-label="Decrease quantity">−</button>
-                    <span>1</span>
-                    <button aria-label="Increase quantity">+</button>
-                  </div>
-                </div>
+                ) : (
+                  items.map((item) => {
+                    const variant = item.product_variants;
+                    const imageUrl =
+                      variant?.product_variant_images?.[0]?.image_url ??
+                      variant?.image_url ??
+                      "/images/milk.png";
+
+                    return (
+                      <div key={item.id} className={styles.cartItem}>
+                        <div className={styles.itemImage}>
+                          <img
+                            src={imageUrl}
+                            alt={
+                              variant?.products?.name ?? "Product image"
+                            }
+                            className={styles.itemImageImg}
+                          />
+                        </div>
+                        <div className={styles.itemInfo}>
+                          <h3>
+                            {item.product_variants?.products?.name ?? "Product"}
+                          </h3>
+                          <p>{item.product_variants?.unit ?? "Qty."}</p>
+                        </div>
+                        <div className={styles.quantityControl}>
+                          <button
+                            type="button"
+                            aria-label="Decrease quantity"
+                            onClick={() =>
+                              setVariantQuantity(
+                                item.variant_id,
+                                item.quantity - 1,
+                              )
+                            }
+                          >
+                            −
+                          </button>
+                          <span>{item.quantity}</span>
+                          <button
+                            type="button"
+                            aria-label="Increase quantity"
+                            onClick={() =>
+                              setVariantQuantity(
+                                item.variant_id,
+                                item.quantity + 1,
+                              )
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </section>
 
               <section className={styles.cartCard}>
@@ -318,19 +382,18 @@ const Navbar = () => {
                     <i className="fa-solid fa-receipt"></i>
                     Items Total
                   </span>
-                  <strong>XX</strong>
+                  <strong>₹{totalAmount}</strong>
                 </div>
-                {/* TODO(cart): Calculate Items Total from cart item price * quantity. */}
                 <div className={styles.billRow}>
                   <span>
                     <i className="fa-solid fa-motorcycle"></i>
                     Delivery Charge
                   </span>
-                  <strong>XX</strong>
+                  <strong>₹10</strong>
                 </div>
                 <div className={`${styles.billRow} ${styles.grandTotal}`}>
                   <span>Grand Total</span>
-                  <strong>XX</strong>
+                  <strong>₹{totalAmount + 10}</strong>
                 </div>
               </section>
 
@@ -355,10 +418,9 @@ const Navbar = () => {
 
               <div className={styles.payBar}>
                 <span>
-                  <strong>XX</strong>
+                  <strong>₹{totalAmount + 10}</strong>
                   Total
                 </span>
-                {/* TODO(orders): Call createOrder() from services/orders.ts, then clear/refresh the cart UI. */}
                 <button>Pay Now</button>
               </div>
             </section>
