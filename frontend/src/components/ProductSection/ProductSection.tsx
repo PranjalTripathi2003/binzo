@@ -52,6 +52,7 @@ const ProductSection = ({ products }: ProductSectionProps) => {
             <ProductCard
               key={product.id}
               productId={product.id}
+              variantId={product.units[0].id}
               title={product.title}
               quantity={product.units[0].size}
               price={product.units[0].price}
@@ -85,6 +86,7 @@ const ProductSection = ({ products }: ProductSectionProps) => {
             <ProductCard
               key={product.id}
               productId={product.id}
+              variantId={product.units[0].id}
               title={product.title}
               quantity={product.units[0].size}
               price={product.units[0].price}

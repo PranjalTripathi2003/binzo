@@ -3,11 +3,11 @@ import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
 import {
   getCurrentUser,
-  login,
   logout,
-  register,
   type AuthUser,
 } from "../../services/auth";
+import AuthModal from "../AuthModal/AuthModal";
+import { useCart } from "../../context/CartContext";
 /**
  * Learning TODO map for frontend/backend connection:
  * - Auth: use services/auth.ts from this file for login/register/me/logout.
@@ -17,10 +17,11 @@ import {
 const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // User state being created for log in and log out
+  const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const navigate = useNavigate();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
+  const { itemCount, refreshCart } = useCart();
 
   useEffect(() => {
     document.body.style.overflow = isCartOpen ? "hidden" : "";
@@ -53,6 +54,7 @@ const Navbar = () => {
     const token = localStorage.getItem("access_token");
 
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(null);
       return;
     }
@@ -62,19 +64,9 @@ const Navbar = () => {
       .catch(() => setUser(null));
   }, []);
 
-  const handleLogin = async () => {
-    try {
-      const result = await login({
-        email: "test@example.com",
-        password: "123456",
-      });
-      localStorage.setItem("access_token", result.access_token);
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setIsAccountOpen(false);
-    } catch (error) {
-      console.error("Login faile", error);
-    }
+  const handleAuthSuccess = (loggedInUser: AuthUser) => {
+    setUser(loggedInUser);
+    setIsAccountOpen(false);
   };
 
   const handleLogout = async () => {
@@ -110,84 +102,84 @@ const Navbar = () => {
         </div>
 
         <div className={styles.right}>
-          <div className={styles.accountMenu}>
-            <button
-              className={styles.accountButton}
-              onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
-              aria-expanded={isAccountOpen}
-              aria-haspopup="menu"
-            >
-              Account
-              <i className="fa-solid fa-caret-down"></i>
-            </button>
-
-            {isAccountOpen && (
-              <div
-                className={styles.dropdown}
-                role="menu"
-                ref={accountDropdownRef}
+          {user ? (
+            <div className={styles.accountMenu}>
+              <button
+                className={styles.accountButton}
+                onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
+                aria-expanded={isAccountOpen}
+                aria-haspopup="menu"
               >
-                {user ? (
-                  <>
-                    <h3>{user.name ?? user.email}</h3>
-                    <p className={styles.phone}>{user.email}</p>
-                    <button
-                      className={styles.dropdownItem}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setIsAccountOpen(false);
-                        navigate("/orders");
-                      }}
-                    >
-                      My Orders
-                    </button>
-                    <button
-                      className={styles.dropdownItem}
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogout}
-                    >
-                      Log Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className={styles.dropdownItem}
-                      type="button"
-                      role="menuitem"
-                      onClick={handleLogin}
-                    >
-                      Login
-                    </button>
+                Account
+                <i className="fa-solid fa-caret-down"></i>
+              </button>
 
+              {isAccountOpen && (
+                <div
+                  className={styles.dropdown}
+                  role="menu"
+                  ref={accountDropdownRef}
+                >
+                  <h3>{user.name ?? user.email}</h3>
+                  <p className={styles.phone}>{user.email}</p>
+                  {user.role === "admin" && (
                     <button
-                      className={styles.dropdownItem}
+                      className={`${styles.dropdownItem} ${styles.adminItem}`}
                       type="button"
                       role="menuitem"
                       onClick={() => {
-                        // later you can call register here
                         setIsAccountOpen(false);
+                        navigate("/admin");
                       }}
                     >
-                      Register
+                      <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+                      Admin Panel
                     </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsAccountOpen(false);
+                      navigate("/orders");
+                    }}
+                  >
+                    My Orders
+                  </button>
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className={styles.authButton}
+              onClick={() => setAuthModal("login")}
+            >
+              Login / Signup
+            </button>
+          )}
 
           <button
             className={styles.cartButton}
             onClick={() => {
               setIsAccountOpen(false);
               setIsCartOpen(true);
+              refreshCart();
             }}
           >
             <i className="fa-solid fa-cart-shopping"></i>
             My Cart
+            {itemCount > 0 && (
+              <span className={styles.cartBadge}>{itemCount}</span>
+            )}
           </button>
         </div>
       </nav>
@@ -291,6 +283,14 @@ const Navbar = () => {
             </section>
           </aside>
         </div>
+      )}
+
+      {authModal && (
+        <AuthModal
+          mode={authModal}
+          onClose={() => setAuthModal(null)}
+          onAuthSuccess={handleAuthSuccess}
+        />
       )}
     </>
   );

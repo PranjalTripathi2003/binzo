@@ -15,6 +15,19 @@
   object-fit: contain;
 }
 
+.iconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  background: #ffffff;
+  color: #4f46e5;
+  font-size: 2.5rem;
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.12);
+}
+
 .title {
   text-align: center;
   margin-top: 1rem;

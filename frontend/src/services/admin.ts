@@ -1,0 +1,164 @@
+import { apiFetch } from "./api";
+
+// ────────────────────────────────────────────────────────────
+// Types
+// ────────────────────────────────────────────────────────────
+
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  image_url?: string | null;
+  created_at: string;
+};
+
+export type ProductVariant = {
+  id: string;
+  product_id: string;
+  unit: string;
+  price: number;
+  stock: number;
+  image_url?: string | null;
+  note?: string | null;
+};
+
+export type Product = {
+  id: string;
+  category_id: string;
+  name: string;
+  description?: string | null;
+  brand?: string | null;
+  created_at: string;
+  updated_at: string;
+  product_variants: ProductVariant[];
+};
+
+export type CreateProductVariantInput = {
+  unit: string;
+  price: number;
+  stock?: number;
+  image_url?: string;
+  note?: string;
+};
+
+export type UpdateProductVariantInput = {
+  id?: string;
+  unit: string;
+  price: number;
+  stock?: number;
+  image_url?: string;
+  note?: string;
+};
+
+export type CreateProductInput = {
+  category_id: string;
+  name: string;
+  description?: string;
+  brand?: string;
+  variants: CreateProductVariantInput[];
+};
+
+export type UpdateProductInput = {
+  category_id?: string;
+  name?: string;
+  description?: string;
+  brand?: string;
+  variants?: UpdateProductVariantInput[];
+};
+
+export type CreateCategoryInput = {
+  name: string;
+  slug: string;
+  image_url?: string;
+};
+
+export type UpdateCategoryInput = {
+  name?: string;
+  slug?: string;
+  image_url?: string;
+};
+
+// ────────────────────────────────────────────────────────────
+// Category endpoints
+// ────────────────────────────────────────────────────────────
+
+export async function getCategories(): Promise<Category[]> {
+  return apiFetch<Category[]>("/categories");
+}
+
+export async function createCategory(
+  input: CreateCategoryInput,
+): Promise<Category> {
+  return apiFetch<Category>("/categories", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateCategory(
+  id: string,
+  input: UpdateCategoryInput,
+): Promise<Category> {
+  return apiFetch<Category>(`/categories/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  return apiFetch<void>(`/categories/${id}`, { method: "DELETE" });
+}
+
+// ────────────────────────────────────────────────────────────
+// Product endpoints
+// ────────────────────────────────────────────────────────────
+
+export async function getProducts(categoryId?: string): Promise<Product[]> {
+  const qs = categoryId ? `?categoryId=${categoryId}` : "";
+  return apiFetch<Product[]>(`/products${qs}`);
+}
+
+export async function createProduct(
+  input: CreateProductInput,
+): Promise<Product> {
+  return apiFetch<Product>("/products", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateProduct(
+  id: string,
+  input: UpdateProductInput,
+): Promise<Product> {
+  return apiFetch<Product>(`/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  return apiFetch<void>(`/products/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Uploads a product image to Supabase Storage via the backend.
+ * Returns the public URL of the stored image.
+ */
+export async function uploadProductImage(file: File): Promise<string> {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("http://localhost:3000/api/products/upload-image", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  const json = await response.json();
+  if (!response.ok || !json.success) {
+    throw new Error(json.message || "Image upload failed");
+  }
+  return json.data.url as string;
+}

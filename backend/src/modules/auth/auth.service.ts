@@ -225,6 +225,27 @@ export class AuthService {
   }
 
   /**
+   * Fetches the full user profile from the users table.
+   *
+   * Called by GET /api/auth/me so the frontend receives name, email, phone, etc.
+   * rather than only the fields that were embedded in the JWT payload.
+   */
+  async getMe(userId: string) {
+    const { data: user, error } = await this.supabaseService
+      .getClient()
+      .from('users')
+      .select('id, email, name, phone, role, created_at')
+      .eq('id', userId)
+      .single();
+
+    if (error || !user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
+  }
+
+  /**
    * Logs out a user by deleting their refresh token rows.
    *
    * This does not invalidate already-issued access tokens; they remain valid

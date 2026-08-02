@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./ProductCard.module.css";
+import { useCart } from "../../context/CartContext";
 
 /**
  * Learning TODO:
@@ -9,6 +11,7 @@ import styles from "./ProductCard.module.css";
  */
 type ProductCardProps = {
   productId: string;
+  variantId: string;
   image: string;
   title: string;
   quantity: string;
@@ -17,12 +20,15 @@ type ProductCardProps = {
 
 const ProductCard = ({
   productId,
+  variantId,
   image,
   title,
   quantity,
   price,
 }: ProductCardProps) => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const [adding, setAdding] = useState(false);
 
   const openProductDetails = () => {
     navigate(`/product/${productId}`);
@@ -54,11 +60,22 @@ const ProductCard = ({
         <button
           className={styles.button}
           type="button"
-          // TODO(cart): event.stopPropagation() is already here so Add does not open product details.
-          // Next step: call addToCart() here and show login/error feedback if there is no token.
-          onClick={(event) => event.stopPropagation()}
+          disabled={adding}
+          onClick={async (event) => {
+            event.stopPropagation();
+            setAdding(true);
+            try {
+              await addToCart(variantId);
+            } catch (err) {
+              if (err instanceof Error && err.message === "unauthenticated") {
+                alert("Please log in to add items to your cart.");
+              }
+            } finally {
+              setAdding(false);
+            }
+          }}
         >
-          Add
+          {adding ? "…" : "Add"}
         </button>
       </div>
     </div>

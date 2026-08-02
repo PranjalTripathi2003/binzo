@@ -350,7 +350,7 @@ Do not introduce additional fonts without explicit approval.
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Primary indigo | `#4F46E5` | Links, focus rings, selected unit borders, hero accents |
+| Primary indigo | `#4F46E5` | Links, focus rings, selected unit borders, hero accents, Login / Signup button |
 | Primary indigo light | `#EEF2FF` | Selected unit/card backgrounds |
 | Accent lime | `#DCE546` | Cart button, quantity controls, promo accents |
 | Text primary | `#000000` | Headings, prices, primary labels |
@@ -360,6 +360,11 @@ Do not introduce additional fonts without explicit approval.
 | White | `#FFFFFF` | Cards, panels |
 
 Match Figma specs when implementing new UI. If Figma provides exact colors, use those values.
+
+### Navbar Header Auth Button Guidelines
+
+- **Logged Out (Unauthenticated State):** Display a prominent **"Login / Signup"** primary button styled in Primary Indigo (`#4F46E5`) with rounded corners (`14px`) and white text. Clicking opens the auth modal (`AuthModal`).
+- **Logged In (Authenticated State):** Replace the "Login / Signup" button with the **"Account"** dropdown button. Clicking toggles a dropdown showing user name/email, "My Orders", and "Log Out".
 
 ### Icons
 

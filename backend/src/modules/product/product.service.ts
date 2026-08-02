@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 type ProductVariantRow = {
   id: string;
@@ -140,6 +141,118 @@ export class ProductService {
   }
 
   /**
+   * Updates editable fields on an existing product and, when supplied, its
+   * variants.
+   *
+   * Tables touched: products and product_variants. Existing variant ids in the
+   * payload are updated, new variants are inserted, and omitted existing
+   * variants are removed from this product.
+   */
+  async update(id: string, dto: UpdateProductDto): Promise<ProductWithVariants> {
+    await this.findOne(id);
+
+    const { variants, ...productFields } = dto;
+
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('products')
+      .update(productFields)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (!variants) {
+      return this.findOne(id);
+    }
+
+    const existingVariants = await this.getVariantsForProduct(id);
+    const existingVariantIds = new Set(
+      existingVariants.map((variant) => variant.id),
+    );
+    const submittedExistingIds = variants
+      .map((variant) => variant.id)
+      .filter((variantId): variantId is string => Boolean(variantId));
+
+    const variantsToDelete = existingVariants
+      .filter((variant) => !submittedExistingIds.includes(variant.id))
+      .map((variant) => variant.id);
+
+    if (variantsToDelete.length > 0) {
+      const { error: deleteError } = await this.supabaseService
+        .getClient()
+        .from('product_variants')
+        .delete()
+        .eq('product_id', id)
+        .in('id', variantsToDelete);
+
+      if (deleteError) {
+        throw new HttpException(
+          deleteError.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+
+    for (const variant of variants) {
+      const { id: variantId, ...variantFields } = variant;
+
+      if (variantId && existingVariantIds.has(variantId)) {
+        const { error: updateError } = await this.supabaseService
+          .getClient()
+          .from('product_variants')
+          .update(variantFields)
+          .eq('id', variantId)
+          .eq('product_id', id);
+
+        if (updateError) {
+          throw new HttpException(
+            updateError.message,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        continue;
+      }
+
+      const { error: insertError } = await this.supabaseService
+        .getClient()
+        .from('product_variants')
+        .insert([{ ...variantFields, product_id: id }]);
+
+      if (insertError) {
+        throw new HttpException(
+          insertError.message,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+
+    return this.findOne((data as ProductRow).id);
+  }
+
+  /**
+   * Reads product_variants rows owned by one product.
+   *
+   * Used by update() to detect removed variants before applying edits.
+   */
+  private async getVariantsForProduct(productId: string): Promise<ProductVariantRow[]> {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('product_variants')
+      .select('*')
+      .eq('product_id', productId);
+
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return data as ProductVariantRow[];
+  }
+
+  /**
    * Deletes a product by UUID.
    *
    * findOne() verifies the product exists first. product_variants rows are
@@ -159,5 +272,43 @@ export class ProductService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Uploads a product image to Supabase Storage 'products' bucket.
+   *
+   * The file is stored at products/<timestamp>-<filename> to prevent collisions.
+   * Returns the public URL that can be saved into product_variants.image_url.
+   */
+  async uploadImage(file: Express.Multer.File): Promise<{ url: string }> {
+    if (!file) {
+      throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
+    }
+
+    const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
+
+    const { error } = await this.supabaseService
+      .getClient()
+      .storage
+      .from('products')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      throw new HttpException(
+        `Image upload failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const { data: urlData } = this.supabaseService
+      .getClient()
+      .storage
+      .from('products')
+      .getPublicUrl(fileName);
+
+    return { url: urlData.publicUrl };
   }
 }

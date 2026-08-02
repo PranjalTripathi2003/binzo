@@ -27,7 +27,7 @@ type ProductDto = {
 };
 
 const fallbackImage = "/images/milk.png";
-const fallbackCategoryImage = "/images/dairy.png";
+const fallbackCategoryImage = "";
 
 const toProductUnit = (
   variant: ProductVariantDto,

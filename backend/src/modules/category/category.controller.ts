@@ -6,7 +6,11 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -54,10 +58,13 @@ export class CategoryController {
   }
 
   /**
-   * POST /api/categories
+   * POST /api/categories  [Admin only]
    *
    * Inserts a new category row. The slug must be unique.
+   * Tables touched: categories.
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
   @Post()
   async create(@Body() createCategoryDto: CreateCategoryDto) {
     const data = await this.categoryService.create(createCategoryDto);
@@ -70,10 +77,13 @@ export class CategoryController {
   }
 
   /**
-   * PATCH /api/categories/:id
+   * PATCH /api/categories/:id  [Admin only]
    *
    * Updates editable category fields after verifying the category exists.
+   * Tables touched: categories.
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -89,10 +99,13 @@ export class CategoryController {
   }
 
   /**
-   * DELETE /api/categories/:id
+   * DELETE /api/categories/:id  [Admin only]
    *
    * Deletes a category. Database cascade rules delete its products too.
+   * Tables touched: categories (cascade: products, product_variants).
    */
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('admin')
   @Delete(':id')
   async remove(@Param('id') id: string) {
     const data = await this.categoryService.remove(id);

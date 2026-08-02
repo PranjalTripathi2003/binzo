@@ -10,14 +10,14 @@ import { getCategories, getProducts, type Category } from "../services/catalog";
 import styles from "./HomePage.module.css";
 
 const fallbackCategories: Category[] = [
-  { id: "dairy", title: "Dairy, Bread & Eggs", image: "/images/dairy.png" },
-  { id: "fruits", title: "Fruits & Vegetables", image: "/images/fruits.png" },
-  { id: "drinks", title: "Cold Drinks & Juices", image: "/images/drinks.png" },
-  { id: "snacks", title: "Snacks & Munchies", image: "/images/snacks.png" },
-  { id: "sweets", title: "Sweet Tooth", image: "/images/sweets.png" },
-  { id: "tea", title: "Tea, Coffee & Milk Drinks", image: "/images/tea.png" },
-  { id: "meat", title: "Chicken, Meat & Fish", image: "/images/chicken.png" },
-  { id: "cleaning", title: "Cleaning Essentials", image: "/images/cleaning.png" },
+  { id: "dairy", title: "Dairy, Bread & Eggs", image: "" },
+  { id: "fruits", title: "Fruits & Vegetables", image: "" },
+  { id: "drinks", title: "Cold Drinks & Juices", image: "" },
+  { id: "snacks", title: "Snacks & Munchies", image: "" },
+  { id: "sweets", title: "Sweet Tooth", image: "" },
+  { id: "tea", title: "Tea, Coffee & Milk Drinks", image: "" },
+  { id: "meat", title: "Chicken, Meat & Fish", image: "" },
+  { id: "cleaning", title: "Cleaning Essentials", image: "" },
 ];
 
 const HomePage = () => {

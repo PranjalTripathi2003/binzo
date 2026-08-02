@@ -18,6 +18,7 @@ export type AuthUser = {
   userId?: string;
   email: string;
   name?: string;
+  role?: string;
 };
 
 export type AuthResponse = {

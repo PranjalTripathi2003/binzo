@@ -63,9 +63,10 @@ export class AuthController {
    */
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  me(@Req() req: any) {
-    // JwtStrategy validate attaches userId and email to request.user
-    return { success: true, data: req.user };
+  async me(@Req() req: any) {
+    // Fetch full profile from DB so the frontend gets name, phone, etc.
+    const user = await this.authService.getMe(req.user.userId);
+    return { success: true, data: user };
   }
 
   /**
