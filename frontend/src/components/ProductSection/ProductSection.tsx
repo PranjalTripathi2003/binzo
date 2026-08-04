@@ -48,7 +48,9 @@ const ProductSection = ({ products }: ProductSectionProps) => {
         <div
           className={styles.productsRow}
           ref={rowRef1}
-          onScroll={(e) => setScrolled1((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
+          onScroll={(e) =>
+            setScrolled1((e.currentTarget as HTMLDivElement).scrollLeft > 0)
+          }
         >
           {featuredProducts.map((product) => (
             <ProductCard
@@ -84,7 +86,9 @@ const ProductSection = ({ products }: ProductSectionProps) => {
         <div
           className={styles.productsRow}
           ref={rowRef2}
-          onScroll={(e) => setScrolled2((e.currentTarget as HTMLDivElement).scrollLeft > 0)}
+          onScroll={(e) =>
+            setScrolled2((e.currentTarget as HTMLDivElement).scrollLeft > 0)
+          }
         >
           {secondRowProducts.map((product) => (
             <ProductCard
@@ -111,6 +115,4 @@ const ProductSection = ({ products }: ProductSectionProps) => {
   );
 };
 
-
 export default ProductSection;
-

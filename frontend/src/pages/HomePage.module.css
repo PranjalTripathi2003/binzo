@@ -1,3 +1,12 @@
+.homeMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  width: min(100% - 4rem, 1280px);
+  margin: 0 auto;
+  padding-bottom: 3.5rem;
+}
+
 .catalogStatus {
   margin: 1rem auto 0;
   max-width: 1200px;

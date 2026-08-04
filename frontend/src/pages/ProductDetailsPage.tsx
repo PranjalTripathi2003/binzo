@@ -16,7 +16,6 @@ const ProductDetailsPage = () => {
     fallbackProduct?.units[0]?.id ?? "",
   );
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
   const { addToCart, getVariantQuantity, setVariantQuantity } = useCart();
 
@@ -24,7 +23,6 @@ const ProductDetailsPage = () => {
     setProduct(nextProduct);
     setSelectedUnitId(nextProduct?.units[0]?.id ?? "");
     setSelectedImageIndex(0);
-    setQuantity(1);
   };
 
   useEffect(() => {
@@ -91,7 +89,6 @@ const ProductDetailsPage = () => {
   );
   const selectedImage = galleryImages[selectedImageIndex] ?? product.image;
   const cartQuantity = selectedUnit ? getVariantQuantity(selectedUnit.id) : 0;
-  const displayedQuantity = cartQuantity > 0 ? cartQuantity : quantity;
 
   const handleAddToCart = async (initialQuantity = 1) => {
     if (!selectedUnit || !product) return;
@@ -112,7 +109,6 @@ const ProductDetailsPage = () => {
 
   const handleQuantityChange = async (direction: 1 | -1) => {
     if (!selectedUnit) {
-      setQuantity((q) => Math.max(1, q + direction));
       return;
     }
 
@@ -120,7 +116,6 @@ const ProductDetailsPage = () => {
     setIsUpdatingCart(true);
     try {
       await setVariantQuantity(selectedUnit.id, nextCartQuantity);
-      if (nextCartQuantity === 0) setQuantity(1);
     } catch (error) {
       if (error instanceof Error && error.message === "unauthenticated") {
         alert("Please log in to update your cart.");
@@ -227,6 +222,13 @@ const ProductDetailsPage = () => {
               </button>
             )}
           </div>
+
+          {product.description ? (
+            <>
+              <h1 className={styles.descriptionHeading}>Description</h1>
+              <p className={styles.productDescription}>{product.description}</p>
+            </>
+          ) : null}
         </section>
       </main>
     </>

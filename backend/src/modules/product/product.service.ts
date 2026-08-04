@@ -65,16 +65,29 @@ export class ProductService {
    * data to show prices and unit sizes; `product_images(*)` gives the frontend
    * card/detail gallery images without extra requests.
    */
-  async findAll(categoryId?: string): Promise<ProductWithVariants[]> {
+  async findAll(
+    categoryId?: string,
+    search?: string,
+  ): Promise<ProductWithVariants[]> {
     let query = this.supabaseService
       .getClient()
       .from('products')
-      .select('*, product_variants(*, product_variant_images(*)), product_images(*)')
+      .select(
+        '*, product_variants(*, product_variant_images(*)), product_images(*)',
+      )
       .order('name', { ascending: true });
 
     if (categoryId) {
       query = query.eq('category_id', categoryId);
     }
+
+    if (search?.trim()) {
+      const escaped = search.trim().replace(/%/g, '\\%').replace(/_/g, '\\_');
+      query = query.or(
+        `name.ilike.${escaped}%,name.ilike.% ${escaped}%,description.ilike.${escaped}%,description.ilike.% ${escaped}%`,
+      );
+    }
+
     const { data, error } = await query;
     if (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -91,7 +104,9 @@ export class ProductService {
     const { data, error } = await this.supabaseService
       .getClient()
       .from('products')
-      .select('*, product_variants(*, product_variant_images(*)), product_images(*)')
+      .select(
+        '*, product_variants(*, product_variant_images(*)), product_images(*)',
+      )
       .eq('id', id)
       .returns<ProductWithVariants>()
       .single();
@@ -144,7 +159,7 @@ export class ProductService {
 
       return {
         ...variantFields,
-      product_id: product.id,
+        product_id: product.id,
       };
     });
 
@@ -187,7 +202,10 @@ export class ProductService {
    * replaces the gallery. Existing variant ids in the payload are updated, new
    * variants are inserted, and omitted existing variants are removed.
    */
-  async update(id: string, dto: UpdateProductDto): Promise<ProductWithVariants> {
+  async update(
+    id: string,
+    dto: UpdateProductDto,
+  ): Promise<ProductWithVariants> {
     await this.findOne(id);
 
     const { variants, image_urls, ...productFields } = dto;
@@ -266,12 +284,13 @@ export class ProductService {
         continue;
       }
 
-      const { data: insertedVariant, error: insertError } = await this.supabaseService
-        .getClient()
-        .from('product_variants')
-        .insert([{ ...variantFields, product_id: id }])
-        .select()
-        .single();
+      const { data: insertedVariant, error: insertError } =
+        await this.supabaseService
+          .getClient()
+          .from('product_variants')
+          .insert([{ ...variantFields, product_id: id }])
+          .select()
+          .single();
 
       if (insertError) {
         throw new HttpException(
@@ -392,7 +411,9 @@ export class ProductService {
    *
    * Used by update() to detect removed variants before applying edits.
    */
-  private async getVariantsForProduct(productId: string): Promise<ProductVariantRow[]> {
+  private async getVariantsForProduct(
+    productId: string,
+  ): Promise<ProductVariantRow[]> {
     const { data, error } = await this.supabaseService
       .getClient()
       .from('product_variants')
@@ -443,8 +464,7 @@ export class ProductService {
 
     const { error } = await this.supabaseService
       .getClient()
-      .storage
-      .from('products')
+      .storage.from('products')
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
         upsert: false,
@@ -459,8 +479,7 @@ export class ProductService {
 
     const { data: urlData } = this.supabaseService
       .getClient()
-      .storage
-      .from('products')
+      .storage.from('products')
       .getPublicUrl(fileName);
 
     return { url: urlData.publicUrl };

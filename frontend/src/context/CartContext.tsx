@@ -124,10 +124,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     const localItems = loadLocalCart();
-    if (localItems.length === 0) return;
+    if (localItems.length === 0) {
+      await refreshCart();
+      return;
+    }
 
     for (const item of localItems) {
-      await apiAddToCart({ variant_id: item.variant_id, quantity: item.quantity });
+      await apiAddToCart({
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+      });
     }
 
     localStorage.removeItem(LOCAL_CART_KEY);
@@ -152,12 +158,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       },
     ) => {
       const token = localStorage.getItem("access_token");
+      const existingItem = items.find((item) => item.variant_id === variantId);
+
       if (!token) {
         if (!productDetails) {
-          throw new Error("Product details are required for offline cart storage.");
+          throw new Error(
+            "Product details are required for offline cart storage.",
+          );
         }
 
-        const existingItem = items.find((item) => item.variant_id === variantId);
         const nextItems = existingItem
           ? items.map((item) =>
               item.variant_id === variantId
@@ -203,11 +212,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const nextItems = quantity <= 0
-          ? items.filter((item) => item.variant_id !== variantId)
-          : items.map((item) =>
-              item.variant_id === variantId ? { ...item, quantity } : item,
-            );
+        const nextItems =
+          quantity <= 0
+            ? items.filter((item) => item.variant_id !== variantId)
+            : items.map((item) =>
+                item.variant_id === variantId ? { ...item, quantity } : item,
+              );
 
         setItems(nextItems);
         saveLocalCart(nextItems);
@@ -240,11 +250,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         await refreshCart();
       } catch (error) {
         if (error instanceof Error && error.message === "unauthenticated") {
-          const nextItems = quantity <= 0
-            ? items.filter((item) => item.variant_id !== variantId)
-            : items.map((item) =>
-                item.variant_id === variantId ? { ...item, quantity } : item,
-              );
+          const nextItems =
+            quantity <= 0
+              ? items.filter((item) => item.variant_id !== variantId)
+              : items.map((item) =>
+                  item.variant_id === variantId ? { ...item, quantity } : item,
+                );
           setItems(nextItems);
           saveLocalCart(nextItems);
           return;

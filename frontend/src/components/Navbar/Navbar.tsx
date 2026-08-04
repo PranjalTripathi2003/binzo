@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentUser, logout, type AuthUser } from "../../services/auth";
+import { getProducts } from "../../services/catalog";
+import type { Product } from "../../data/products";
 import AuthModal from "../AuthModal/AuthModal";
 import { useCart } from "../../context/CartContext";
 /**
@@ -15,6 +17,11 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [deliveryMinutes] = useState(() => {
     const storedMinutes = sessionStorage.getItem("delivery_minutes");
     if (storedMinutes) return Number(storedMinutes);
@@ -58,16 +65,20 @@ const Navbar = () => {
       ) {
         setIsAccountOpen(false);
       }
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
     };
 
-    if (isAccountOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isAccountOpen]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -82,6 +93,30 @@ const Navbar = () => {
       .then((currentUser) => setUser(currentUser))
       .catch(() => setUser(null));
   }, []);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setIsSearchLoading(false);
+      return;
+    }
+
+    const handle = window.setTimeout(async () => {
+      setIsSearchLoading(true);
+      try {
+        const results = await getProducts(undefined, query);
+        setSearchResults(results.slice(0, 6));
+      } catch (error) {
+        console.error(error);
+        setSearchResults([]);
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(handle);
+  }, [searchQuery]);
 
   useEffect(() => {
     const savedLocation = localStorage.getItem("delivery_location_label");
@@ -178,9 +213,67 @@ const Navbar = () => {
         </div>
 
         <div className={styles.center}>
-          <div className={styles.searchBox}>
+          <div className={styles.searchBox} ref={searchContainerRef}>
             <i className="fa-solid fa-magnifying-glass"></i>
-            <input placeholder="Search for Grocery..." />
+            <input
+              type="search"
+              placeholder="Search for Grocery..."
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setIsSearchOpen(true);
+              }}
+              onFocus={() => setIsSearchOpen(true)}
+              aria-label="Search for Grocery"
+            />
+
+            {isSearchOpen && (
+              <div className={styles.searchResultsPanel}>
+                {searchQuery.trim().length < 2 ? (
+                  <div className={styles.searchEmptyState}>
+                    Type at least two characters to search.
+                  </div>
+                ) : isSearchLoading ? (
+                  <div className={styles.searchEmptyState}>Searching...</div>
+                ) : searchResults.length > 0 ? (
+                  <>
+                    <div className={styles.searchResultCount}>
+                      Showing {searchResults.length} best match
+                      {searchResults.length === 1 ? "" : "es"} for "
+                      {searchQuery}"
+                    </div>
+                    {searchResults.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        className={styles.searchResultItem}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSearchResults([]);
+                          setIsSearchOpen(false);
+                          navigate(`/product/${product.id}`);
+                        }}
+                      >
+                        <img
+                          src={product.image}
+                          alt={product.title}
+                          className={styles.searchResultImage}
+                        />
+                        <div className={styles.searchResultText}>
+                          <span className={styles.searchResultTitle}>
+                            {product.title}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div className={styles.searchEmptyState}>
+                    No results found for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -228,9 +321,25 @@ const Navbar = () => {
                     role="menuitem"
                     onClick={() => {
                       setIsAccountOpen(false);
+                      navigate("/orders/addresses");
+                    }}
+                  >
+                    <i
+                      className="fa-solid fa-location-dot"
+                      aria-hidden="true"
+                    />
+                    Saved Addresses
+                  </button>
+                  <button
+                    className={styles.dropdownItem}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsAccountOpen(false);
                       navigate("/orders");
                     }}
                   >
+                    <i className="fa-solid fa-receipt" aria-hidden="true" />
                     My Orders
                   </button>
                   <button
@@ -239,6 +348,10 @@ const Navbar = () => {
                     role="menuitem"
                     onClick={handleLogout}
                   >
+                    <i
+                      className="fa-solid fa-right-from-bracket"
+                      aria-hidden="true"
+                    />
                     Log Out
                   </button>
                 </div>
@@ -330,9 +443,7 @@ const Navbar = () => {
                         <div className={styles.itemImage}>
                           <img
                             src={imageUrl}
-                            alt={
-                              variant?.products?.name ?? "Product image"
-                            }
+                            alt={variant?.products?.name ?? "Product image"}
                             className={styles.itemImageImg}
                           />
                         </div>
@@ -411,8 +522,10 @@ const Navbar = () => {
               <div className={styles.addressHeader}>
                 <i className="fa-solid fa-location-dot"></i>
                 <div>
-                  <h2>Delivering to Username</h2>
-                  <p>Salt Lake City, USA</p>
+                  <h2>
+                    Delivering to {user?.name ?? user?.email ?? "Your address"}
+                  </h2>
+                  <p>{locationLabel}</p>
                 </div>
               </div>
 

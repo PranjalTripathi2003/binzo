@@ -34,6 +34,7 @@ type ProductImageDto = {
 type ProductDto = {
   id: string;
   name: string;
+  description?: string | null;
   product_variants?: ProductVariantDto[];
   product_images?: ProductImageDto[];
 };
@@ -99,6 +100,7 @@ const toProduct = (product: ProductDto): Product => {
   return {
     id: product.id,
     title: product.name,
+    description: product.description ?? undefined,
     image: images[0] ?? fallbackImage,
     images,
     units,
@@ -119,8 +121,19 @@ export async function getCategories(): Promise<Category[]> {
   return categories.map(toCategory);
 }
 
-export async function getProducts(categoryId?: string): Promise<Product[]> {
-  const query = categoryId ? `?categoryId=${encodeURIComponent(categoryId)}` : "";
+export async function getProducts(
+  categoryId?: string,
+  search?: string,
+): Promise<Product[]> {
+  const queryParts: string[] = [];
+  if (categoryId) {
+    queryParts.push(`categoryId=${encodeURIComponent(categoryId)}`);
+  }
+  if (search?.trim()) {
+    queryParts.push(`search=${encodeURIComponent(search.trim())}`);
+  }
+
+  const query = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
   const products = await apiFetch<ProductDto[]>(`/products${query}`);
   return products.map(toProduct).filter((product) => product.units.length > 0);
 }

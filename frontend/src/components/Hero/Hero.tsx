@@ -1,6 +1,10 @@
 import styles from "./Hero.module.css";
 
-const Hero = () => {
+type HeroProps = {
+  onShopNow: () => void;
+};
+
+const Hero = ({ onShopNow }: HeroProps) => {
   return (
     <section className={styles.hero}>
       <div className={styles.left}>
@@ -8,7 +12,9 @@ const Hero = () => {
 
         <p> Get your favorite snacks and groceries delivered.</p>
 
-        <button>Shop Now</button>
+        <button type="button" onClick={onShopNow}>
+          Shop Now
+        </button>
       </div>
 
       <div className={styles.right}>

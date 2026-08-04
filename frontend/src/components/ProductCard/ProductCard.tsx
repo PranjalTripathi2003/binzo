@@ -43,10 +43,19 @@ const ProductCard = ({
       tabIndex={0}
       aria-label={`View ${title}`}
     >
-      <img src={image} alt={title} className={styles.image} />
+      <img
+        src={image || "/images/milk.png"}
+        alt={title}
+        className={styles.image}
+        onError={(event) => {
+          const target = event.currentTarget as HTMLImageElement;
+          if (target.src !== "/images/milk.png") {
+            target.src = "/images/milk.png";
+          }
+        }}
+      />
 
       <h3 className={styles.title}>{title}</h3>
-
       <p className={styles.quantity}>{quantity}</p>
 
       <div className={styles.bottom}>

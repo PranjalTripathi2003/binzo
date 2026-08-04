@@ -1,6 +1,6 @@
 .section {
-  padding: 1rem 0 2.5rem;
-  width: min(100% - 4rem, 1200px);
+  padding: 0;
+  width: 100%;
   max-width: none;
   margin: 0 auto;
   box-sizing: border-box;

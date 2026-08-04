@@ -33,11 +33,15 @@ export class ProductController {
    * GET /api/products
    *
    * Returns products with nested variants. Optional categoryId filters the list
-   * for category browsing.
+   * for category browsing. Optional search performs a text match across product
+   * name and description.
    */
   @Get()
-  async findAll(@Query('categoryId') categoryId: string) {
-    const data = await this.productService.findAll(categoryId);
+  async findAll(
+    @Query('categoryId') categoryId?: string,
+    @Query('search') search?: string,
+  ) {
+    const data = await this.productService.findAll(categoryId, search);
     return {
       success: true,
       data,

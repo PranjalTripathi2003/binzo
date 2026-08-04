@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AddressModule } from './modules/address/address.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CategoryModule } from './modules/category/category.module';
@@ -21,6 +22,7 @@ import { SupabaseModule } from './modules/supabase/supabase.module';
     ConfigModule.forRoot({ isGlobal: true }),
     SupabaseModule,
     AuthModule,
+    AddressModule,
     CategoryModule,
     ProductModule,
     CartModule,

@@ -73,7 +73,9 @@ export class CartService {
         .from('cart_items')
         .update({ quantity: newQuantity, note: note || existing.note })
         .eq('id', existing.id)
-        .select('*, product_variants(*, products(*), product_variant_images(*))')
+        .select(
+          '*, product_variants(*, products(*), product_variant_images(*))',
+        )
         .single();
 
       if (updateError) {
@@ -88,7 +90,9 @@ export class CartService {
         .getClient()
         .from('cart_items')
         .insert([{ user_id: userId, variant_id, quantity, note }])
-        .select('*, product_variants(*, products(*), product_variant_images(*))')
+        .select(
+          '*, product_variants(*, products(*), product_variant_images(*))',
+        )
         .single();
 
       if (insertError) {

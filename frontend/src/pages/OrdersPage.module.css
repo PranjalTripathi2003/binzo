@@ -50,6 +50,11 @@
   border-bottom: none;
 }
 
+.sidebarLinkActive {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
 .sidebarLink:hover {
   background-color: #f8fafc;
 }
@@ -60,7 +65,7 @@
 }
 
 .content {
-  background: #F7F8FC;
+  background: #f7f8fc;
   padding: 3rem 2rem;
   display: flex;
   flex-direction: column;
@@ -68,9 +73,143 @@
   min-height: 100%;
 }
 
+.pageHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pageLabel {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.addressPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.addAddressButton {
+  border: none;
+  border-radius: 14px;
+  background: #4f46e5;
+  color: #ffffff;
+  padding: 0.9rem 1.25rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.addressList {
+  display: grid;
+  gap: 1rem;
+}
+
+.addressCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+.addressCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.addressLabel {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.addressDescription {
+  margin: 0.5rem 0 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.addressTag {
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.addressCardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.deleteAddressBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid #fecdd3;
+  background: #fff1f2;
+  color: #e1374a;
+  font-size: 0.9rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.deleteAddressBtn:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.deleteAddressBtn:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.deleteAddressBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .orderList {
   display: grid;
   gap: 1.2rem;
+}
+
+.emptyState {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  color: #475569;
+}
+
+.emptyState h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  color: #111827;
+}
+
+.emptyState p {
+  margin: 0.4rem 0 0;
+  font-size: 0.98rem;
 }
 
 .orderCard {
@@ -79,7 +218,9 @@
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   border: 1px solid #f1f5f9;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .orderCard:hover {
@@ -117,13 +258,13 @@
 }
 
 .statusBadgeSuccess {
-  background: #EAFFEC;
-  color: #309B4B;
+  background: #eaffec;
+  color: #309b4b;
 }
 
 .statusBadgeCancel {
-  background: #FEEEEF;
-  color: #E1374A;
+  background: #feeeef;
+  color: #e1374a;
 }
 
 .orderHeader h2 {
@@ -169,7 +310,9 @@
   align-items: center;
   justify-content: center;
   padding: 4px;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   overflow: hidden;
 }
@@ -184,3 +327,193 @@
   height: 100%;
   object-fit: contain;
 }
+
+/* ── Add Address Modal ────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.15);
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modalClose {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modalClose:hover {
+  background: #e2e8f0;
+  color: #111827;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.formLabel {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #374151;
+  letter-spacing: 0.02em;
+}
+
+.formInput,
+.formTextarea {
+  width: 100%;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.97rem;
+  font-family: inherit;
+  color: #111827;
+  background: #f8fafc;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.formCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.formCheckbox input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #4f46e5;
+  cursor: pointer;
+}
+
+.formError {
+  margin: 0;
+  font-size: 0.87rem;
+  color: #e1374a;
+  font-weight: 600;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.modalCancelBtn {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.7rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.modalCancelBtn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.modalSaveBtn {
+  border: none;
+  border-radius: 12px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.7rem 1.4rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.modalSaveBtn:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.modalSaveBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.modalCancelBtn:disabled,
+.modalSaveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

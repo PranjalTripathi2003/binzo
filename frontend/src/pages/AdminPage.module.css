@@ -29,7 +29,7 @@
 .sidebarLogo {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   padding: 28px 24px 20px;
   font-family: "Lobster", cursive;
   font-size: 1.6rem;
@@ -80,7 +80,9 @@
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   width: 100%;
 }
 
@@ -156,7 +158,9 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   width: 100%;
   justify-content: center;
 }
@@ -244,7 +248,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .statCard:hover {
@@ -360,7 +366,9 @@
   font-family: "Inter", sans-serif;
   color: #0f172a;
   background: #ffffff;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   width: 100%;
   box-sizing: border-box;
 }
@@ -477,7 +485,9 @@
   font-weight: 600;
   font-family: "Inter", sans-serif;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   white-space: nowrap;
 }
 
@@ -621,8 +631,12 @@
   border-radius: 10px;
   background: #ffffff;
   color: #0f172a;
-  font: 500 0.875rem/1 "Inter", sans-serif;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font:
+    500 0.875rem/1 "Inter",
+    sans-serif;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .searchInput:focus {
