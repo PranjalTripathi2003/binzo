@@ -3,10 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { getCurrentUser } from "../services/auth";
 import { getOrders, type Order } from "../services/orders";
-import { createAddress, deleteAddress, getAddresses, type Address } from "../services/addresses";
+import {
+  createAddress,
+  deleteAddress,
+  getAddresses,
+  type Address,
+} from "../services/addresses";
 import LocationMap from "../components/Navbar/LocationMap";
 import styles from "./OrdersPage.module.css";
-
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -20,12 +24,16 @@ const OrdersPage = () => {
 
   // Add address modal state
   const [showModal, setShowModal] = useState(false);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    28.6139, 77.209,
+  ]);
   const [mapAddressText, setMapAddressText] = useState("");
   const [formHouseNo, setFormHouseNo] = useState("");
   const [formFloor, setFormFloor] = useState("");
   const [formNearbyLandmark, setFormNearbyLandmark] = useState("");
-  const [formAddressLabelType, setFormAddressLabelType] = useState<"Home" | "Work" | "Hotel" | "Other">("Home");
+  const [formAddressLabelType, setFormAddressLabelType] = useState<
+    "Home" | "Work" | "Hotel" | "Other"
+  >("Home");
   const [formCustomLabel, setFormCustomLabel] = useState("");
   const [formReceiverName, setFormReceiverName] = useState("");
   const [formReceiverPhone, setFormReceiverPhone] = useState("");
@@ -91,20 +99,27 @@ const OrdersPage = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setMapCenter([pos.coords.latitude, pos.coords.longitude]);
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
-            .then(res => res.json())
-            .then(data => {
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`,
+          )
+            .then((res) => res.json())
+            .then((data) => {
               if (data && data.display_name) {
                 setMapAddressText(data.display_name);
               }
-            }).catch(() => {});
+            })
+            .catch(() => {});
         },
-        () => {}
+        () => {},
       );
     }
   }, [showModal]);
 
-  const handleMapLocationChange = (lat: number, lng: number, addressText: string) => {
+  const handleMapLocationChange = (
+    lat: number,
+    lng: number,
+    addressText: string,
+  ) => {
     setMapCenter([lat, lng]);
     setMapAddressText(addressText);
   };
@@ -147,12 +162,15 @@ const OrdersPage = () => {
       formHouseNo.trim(),
       formFloor.trim() ? `Floor ${formFloor.trim()}` : "",
       mapAddressText || "Locating...",
-      formNearbyLandmark.trim() ? `Near ${formNearbyLandmark.trim()}` : ""
-    ].filter(Boolean).join(", ");
+      formNearbyLandmark.trim() ? `Near ${formNearbyLandmark.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-    const labelName = formAddressLabelType === "Other" && formCustomLabel.trim() 
-      ? formCustomLabel.trim() 
-      : formAddressLabelType;
+    const labelName =
+      formAddressLabelType === "Other" && formCustomLabel.trim()
+        ? formCustomLabel.trim()
+        : formAddressLabelType;
 
     try {
       const created = await createAddress({
@@ -212,76 +230,78 @@ const OrdersPage = () => {
         <main className={styles.content}>
           {view === "addresses" ? (
             <>
-            <div className={styles.addressPanel}>
-              <div className={styles.pageHeading}>
-                <div>
-                  <p className={styles.pageLabel}>Saved Addresses</p>
-                  <h1>Delivery address book</h1>
+              <div className={styles.addressPanel}>
+                <div className={styles.pageHeading}>
+                  <div>
+                    <p className={styles.pageLabel}>Saved Addresses</p>
+                    <h1>Delivery address book</h1>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.addAddressButton}
+                    onClick={openModal}
+                  >
+                    <i className="fa-solid fa-plus" />
+                    Add new address
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className={styles.addAddressButton}
-                  onClick={openModal}
-                >
-                  <i className="fa-solid fa-plus" />
-                  Add new address
-                </button>
-              </div>
-              <div className={styles.addressList}>
-                {isLoading ? (
-                  <div className={styles.emptyState}>
-                    <p>Loading your addresses…</p>
-                  </div>
-                ) : addressError ? (
-                  <div className={styles.emptyState}>
-                    <p>Unable to load your addresses right now.</p>
-                    <p>Please try again later.</p>
-                  </div>
-                ) : addresses.length === 0 ? (
-                  <div className={styles.emptyState}>
-                    <p>No saved addresses yet. Add one to get started.</p>
-                  </div>
-                ) : (
-                  addresses.map((address) => (
-                    <article key={address.id} className={styles.addressCard}>
-                      <div className={styles.addressCardHeader}>
-                        <div>
-                          <p className={styles.addressLabel}>{address.label}</p>
-                          <p className={styles.addressDescription}>
-                            {address.address}
-                          </p>
-                        </div>
-                        <div className={styles.addressCardActions}>
-                          {address.is_default && (
-                            <span className={styles.addressTag}>Default</span>
-                          )}
-                          <button
-                            type="button"
-                            className={styles.deleteAddressBtn}
-                            aria-label={`Delete ${address.label} address`}
-                            disabled={deletingId === address.id}
-                            onClick={() => handleDeleteAddress(address.id)}
-                          >
-                            {deletingId === address.id ? (
-                              <i className="fa-solid fa-spinner fa-spin" />
-                            ) : (
-                              <i className="fa-solid fa-trash" />
+                <div className={styles.addressList}>
+                  {isLoading ? (
+                    <div className={styles.emptyState}>
+                      <p>Loading your addresses…</p>
+                    </div>
+                  ) : addressError ? (
+                    <div className={styles.emptyState}>
+                      <p>Unable to load your addresses right now.</p>
+                      <p>Please try again later.</p>
+                    </div>
+                  ) : addresses.length === 0 ? (
+                    <div className={styles.emptyState}>
+                      <p>No saved addresses yet. Add one to get started.</p>
+                    </div>
+                  ) : (
+                    addresses.map((address) => (
+                      <article key={address.id} className={styles.addressCard}>
+                        <div className={styles.addressCardHeader}>
+                          <div>
+                            <p className={styles.addressLabel}>
+                              {address.label}
+                            </p>
+                            <p className={styles.addressDescription}>
+                              {address.address}
+                            </p>
+                          </div>
+                          <div className={styles.addressCardActions}>
+                            {address.is_default && (
+                              <span className={styles.addressTag}>Default</span>
                             )}
-                          </button>
+                            <button
+                              type="button"
+                              className={styles.deleteAddressBtn}
+                              aria-label={`Delete ${address.label} address`}
+                              disabled={deletingId === address.id}
+                              onClick={() => handleDeleteAddress(address.id)}
+                            >
+                              {deletingId === address.id ? (
+                                <i className="fa-solid fa-spinner fa-spin" />
+                              ) : (
+                                <i className="fa-solid fa-trash" />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  ))
-                )}
+                      </article>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
               {/* Interactive Map Modal Overlay */}
               {showModal && (
                 <div className={styles.mapModalOverlay}>
                   <div className={styles.mapModal}>
-                    <button 
-                      type="button" 
-                      className={styles.closeMapModalBtn} 
+                    <button
+                      type="button"
+                      className={styles.closeMapModalBtn}
                       onClick={closeModal}
                       aria-label="Close Map Modal"
                     >
@@ -293,21 +313,27 @@ const OrdersPage = () => {
                       <div className={styles.mapSection}>
                         <div className={styles.mapSearchBox}>
                           <i className="fa-solid fa-magnifying-glass" />
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={mapAddressText}
                             onChange={(e) => setMapAddressText(e.target.value)}
                             placeholder="Search delivery location..."
                           />
                           {mapAddressText && (
-                            <button type="button" onClick={() => setMapAddressText("")}>
+                            <button
+                              type="button"
+                              onClick={() => setMapAddressText("")}
+                            >
                               <i className="fa-solid fa-xmark" />
                             </button>
                           )}
                         </div>
 
                         <div className={styles.leafletWrapper}>
-                          <LocationMap center={mapCenter} onLocationChange={handleMapLocationChange} />
+                          <LocationMap
+                            center={mapCenter}
+                            onLocationChange={handleMapLocationChange}
+                          />
                         </div>
 
                         <div className={styles.mapOverlayFooter}>
@@ -328,35 +354,45 @@ const OrdersPage = () => {
                           <div className={styles.fieldGroup}>
                             <label>Save address as *</label>
                             <div className={styles.labelTypeRow}>
-                              {(["Home", "Work", "Hotel", "Other"] as const).map((type) => (
+                              {(
+                                ["Home", "Work", "Hotel", "Other"] as const
+                              ).map((type) => (
                                 <button
                                   key={type}
                                   type="button"
                                   className={`${styles.labelTypeBtn} ${formAddressLabelType === type ? styles.labelTypeBtnSelected : ""}`}
                                   onClick={() => setFormAddressLabelType(type)}
                                 >
-                                  <i className={
-                                    type === "Home" ? "fa-solid fa-house" :
-                                    type === "Work" ? "fa-solid fa-briefcase" :
-                                    type === "Hotel" ? "fa-solid fa-hotel" : "fa-solid fa-location-dot"
-                                  } />
+                                  <i
+                                    className={
+                                      type === "Home"
+                                        ? "fa-solid fa-house"
+                                        : type === "Work"
+                                          ? "fa-solid fa-briefcase"
+                                          : type === "Hotel"
+                                            ? "fa-solid fa-hotel"
+                                            : "fa-solid fa-location-dot"
+                                    }
+                                  />
                                   {type}
                                 </button>
                               ))}
                             </div>
                             {formAddressLabelType === "Other" && (
-                              <input 
+                              <input
                                 type="text"
                                 className={styles.mapFormInput}
                                 placeholder="Custom label (e.g. Parents, Gym)"
                                 value={formCustomLabel}
-                                onChange={(e) => setFormCustomLabel(e.target.value)}
+                                onChange={(e) =>
+                                  setFormCustomLabel(e.target.value)
+                                }
                               />
                             )}
                           </div>
 
                           <div className={styles.fieldGroup}>
-                            <input 
+                            <input
                               type="text"
                               className={styles.mapFormInput}
                               placeholder="Flat / House no / Building name *"
@@ -366,7 +402,7 @@ const OrdersPage = () => {
                           </div>
 
                           <div className={styles.fieldGroup}>
-                            <input 
+                            <input
                               type="text"
                               className={styles.mapFormInput}
                               placeholder="Floor (optional)"
@@ -383,45 +419,57 @@ const OrdersPage = () => {
                           </div>
 
                           <div className={styles.fieldGroup}>
-                            <input 
+                            <input
                               type="text"
                               className={styles.mapFormInput}
                               placeholder="Nearby landmark (optional)"
                               value={formNearbyLandmark}
-                              onChange={(e) => setFormNearbyLandmark(e.target.value)}
+                              onChange={(e) =>
+                                setFormNearbyLandmark(e.target.value)
+                              }
                             />
                           </div>
 
-                          <p className={styles.detailsHelpText}>Enter your details for seamless delivery experience</p>
+                          <p className={styles.detailsHelpText}>
+                            Enter your details for seamless delivery experience
+                          </p>
 
                           <div className={styles.fieldGroup}>
-                            <input 
+                            <input
                               type="text"
                               className={styles.mapFormInput}
                               placeholder="Your name *"
                               value={formReceiverName}
-                              onChange={(e) => setFormReceiverName(e.target.value)}
+                              onChange={(e) =>
+                                setFormReceiverName(e.target.value)
+                              }
                             />
                           </div>
 
                           <div className={styles.fieldGroup}>
-                            <input 
+                            <input
                               type="text"
                               className={styles.mapFormInput}
                               placeholder="Your phone number (optional)"
                               value={formReceiverPhone}
-                              onChange={(e) => setFormReceiverPhone(e.target.value)}
+                              onChange={(e) =>
+                                setFormReceiverPhone(e.target.value)
+                              }
                             />
                           </div>
 
-                          {formError && <p className={styles.mapFormError}>{formError}</p>}
+                          {formError && (
+                            <p className={styles.mapFormError}>{formError}</p>
+                          )}
 
-                          <button 
-                            type="submit" 
+                          <button
+                            type="submit"
                             className={styles.mapFormSubmitBtn}
                             disabled={formSubmitting}
                           >
-                            {formSubmitting ? "Saving Address..." : "Save Address"}
+                            {formSubmitting
+                              ? "Saving Address..."
+                              : "Save Address"}
                           </button>
                         </form>
                       </div>
