@@ -17,6 +17,10 @@ export type Order = {
   status: string;
   total_amount: number | string;
   created_at: string;
+  addresses?: {
+    label: string;
+    address: string;
+  } | null;
   order_items?: {
     id: string;
     quantity: number;
@@ -54,3 +58,13 @@ export async function createOrder(input: { address_id?: string } = {}) {
     body: JSON.stringify(input),
   });
 }
+
+/**
+ * GET /api/orders/:id
+ *
+ * Retrieves a single order owned by the authenticated user.
+ */
+export async function getOrder(id: string): Promise<Order> {
+  return apiFetch<Order>(`/orders/${id}`);
+}
+

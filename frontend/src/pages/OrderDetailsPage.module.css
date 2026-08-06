@@ -1,0 +1,382 @@
+.page {
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+
+.header {
+  background-color: #4F46E5; /* Binzo Indigo */
+  color: #ffffff;
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.headerBackBtn {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.headerBackBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.headerTitle {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.headerSubtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin: 0.25rem 0 0 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mapCard {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.mapWrapper {
+  height: 250px;
+  width: 100%;
+  position: relative;
+}
+
+.mapOverlayStatus {
+  background-color: #ffffff;
+  padding: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.etaTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin: 0;
+}
+
+.etaText {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #4F46E5;
+  margin: 0.2rem 0 0 0;
+}
+
+.progressBarWrapper {
+  margin-top: 0.75rem;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background-color: #4F46E5;
+  border-radius: 3px;
+  transition: width 1s ease-in-out;
+}
+
+.partnerCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.partnerInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.partnerAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #4b5563;
+  border: 2px solid #e5e7eb;
+}
+
+.partnerDetails {
+  flex: 1;
+}
+
+.partnerName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.partnerRole {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0.15rem 0 0 0;
+}
+
+.partnerCallBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4F46E5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.partnerCallBtn:hover {
+  background-color: #e5e7eb;
+}
+
+.partnerStatusText {
+  background-color: #EEF2FF;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.tipCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.tipTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.tipSubtitle {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0.25rem 0 1rem 0;
+}
+
+.tipRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tipBtn {
+  flex: 1;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.tipBtn:hover {
+  background-color: #f9fafb;
+  border-color: #cbd5e1;
+}
+
+.tipBtnSelected {
+  background-color: #EEF2FF;
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+
+.summaryCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 1rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.5rem;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.itemName {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.itemQty {
+  font-weight: 700;
+  color: #6b7280;
+  margin-left: 0.5rem;
+}
+
+.itemPrice {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.billSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 1rem;
+}
+
+.billRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.billTotal {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #111827;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.deliveryAddressCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  gap: 1rem;
+}
+
+.addressIcon {
+  color: #4f46e5;
+  font-size: 1.35rem;
+  margin-top: 0.15rem;
+}
+
+.addressDetails h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.addressDetails p {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.88rem;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.loadingWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+  color: #6b7280;
+}
+
+.errorWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.errorWrapper h2 {
+  color: #dc2626;
+}
+
+.backHomeBtn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  background-color: #4f46e5;
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.backHomeBtn:hover {
+  background-color: #4338ca;
+}

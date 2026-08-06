@@ -218,6 +218,7 @@
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   border: 1px solid #f1f5f9;
+  cursor: pointer;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -247,7 +248,8 @@
 }
 
 .statusBadgeSuccess,
-.statusBadgeCancel {
+.statusBadgeCancel,
+.statusBadgeDelivering {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -265,6 +267,16 @@
 .statusBadgeCancel {
   background: #feeeef;
   color: #e1374a;
+}
+
+.statusBadgeDelivering {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.orderCardDelivering {
+  background: #ffffff;
+  border-left: 4px solid #f59e0b;
 }
 
 .orderHeader h2 {

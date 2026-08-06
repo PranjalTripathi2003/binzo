@@ -26,10 +26,44 @@ export async function apiFetch<T>(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
+
+  // Handle unauthorized (expired access token)
+  if (response.status === 401 && endpoint !== "/auth/refresh") {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      try {
+        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (refreshResponse.ok) {
+          const refreshJson: ApiResponse<{ access_token: string; refresh_token: string }> =
+            await refreshResponse.json();
+
+          if (refreshJson.success && refreshJson.data) {
+            const { access_token, refresh_token } = refreshJson.data;
+            localStorage.setItem("access_token", access_token);
+            localStorage.setItem("refresh_token", refresh_token);
+
+            // Retry the original request with the fresh token
+            headers.Authorization = `Bearer ${access_token}`;
+            response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              ...options,
+              headers,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Transparent token refresh failed:", err);
+      }
+    }
+  }
 
   if (response.status === 401) {
     localStorage.removeItem("access_token");

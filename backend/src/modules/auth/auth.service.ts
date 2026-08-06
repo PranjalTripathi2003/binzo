@@ -198,31 +198,91 @@ export class AuthService {
   }
 
   /**
-   * Placeholder for refresh-token rotation.
-   *
-   * Intended flow:
-   * 1. Verify the refresh JWT.
-   * 2. Find the user's active refresh_tokens rows.
-   * 3. bcrypt.compare() the submitted token against token_hash.
-   * 4. Issue new tokens and revoke/replace the old hash.
+   * Verifies an active refresh token, matches its bcrypt hash,
+   * and rotates it by generating a new access/refresh pair.
    */
-  async refresh(_refreshToken: string) {
-    const { data: refreshTokenHash, error: refreshTokenHashError } =
-      await this.supabaseService
-        .getClient()
-        .from('refresh_tokens')
-        .select('*')
-        .eq('token_hash', _refreshToken)
-        .single();
-
-    if (refreshTokenHash) {
-      throw new HttpException(
-        refreshTokenHash.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new HttpException('Refresh token is required', HttpStatus.BAD_REQUEST);
     }
-    return { success: true };
+
+    const refreshSecret =
+      this.configService.get<string>('JWT_REFRESH_SECRET') ||
+      'default-refresh-secret';
+
+    let payload: any;
+    try {
+      payload = jwt.verify(refreshToken, refreshSecret);
+    } catch (err) {
+      this.logger.error('Invalid refresh token signature/expiry: ' + (err as Error).message);
+      throw new HttpException('Invalid or expired refresh token', HttpStatus.UNAUTHORIZED);
+    }
+
+    const userId = payload.sub;
+    const email = payload.email;
+
+    if (!userId || !email) {
+      throw new HttpException('Invalid refresh token payload', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Fetch active refresh tokens for the user
+    const { data: records, error } = await this.supabaseService
+      .getClient()
+      .from('refresh_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('revoked', false);
+
+    if (error) {
+      this.logger.error('Error fetching refresh tokens: ' + error.message);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    if (!records || records.length === 0) {
+      throw new HttpException('No session found', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Compare bcrypt hashes to locate the matched token session
+    let matchedRecord: any = null;
+    for (const record of records) {
+      const isMatch = await bcrypt.compare(refreshToken, record.token_hash);
+      if (isMatch) {
+        if (new Date(record.expires_at) > new Date()) {
+          matchedRecord = record;
+          break;
+        }
+      }
+    }
+
+    if (!matchedRecord) {
+      throw new HttpException('Invalid or expired session', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Generate new access and refresh tokens
+    const tokens = await this.generateTokens(userId, email);
+
+    // Rotate token hash in DB
+    const newTokenHash = await bcrypt.hash(tokens.refresh_token, 10);
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const { error: updateError } = await this.supabaseService
+      .getClient()
+      .from('refresh_tokens')
+      .update({
+        token_hash: newTokenHash,
+        expires_at: newExpiresAt,
+        created_at: new Date(),
+      })
+      .eq('id', matchedRecord.id);
+
+    if (updateError) {
+      this.logger.error('Failed to rotate refresh token: ' + updateError.message);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return tokens;
   }
+
 
   /**
    * Fetches the full user profile from the users table.

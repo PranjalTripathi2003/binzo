@@ -72,11 +72,10 @@ export class AuthController {
   /**
    * POST /api/auth/refresh
    *
-   * Placeholder route for refreshing expired access tokens.
+   * Verifies the refresh token and rotates it, returning a new access/refresh pair.
    */
   @Post('refresh')
   async refresh(@Body('refresh_token') refresh_token: string) {
-    // TODO: implement refresh flow in AuthService
     const result = await this.authService.refresh(refresh_token);
     return { success: true, data: result };
   }

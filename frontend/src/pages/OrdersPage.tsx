@@ -502,32 +502,41 @@ const OrdersPage = () => {
                   <article
                     key={order.id}
                     className={`${styles.orderCard} ${
-                      order.status === "success"
+                      order.status === "success" || order.status === "delivered"
                         ? styles.orderCardSuccess
-                        : styles.orderCardCancel
+                        : order.status === "cancelled"
+                        ? styles.orderCardCancel
+                        : styles.orderCardDelivering
                     }`}
+                    onClick={() => navigate(`/order/${order.id}`)}
                   >
                     <div className={styles.orderHeader}>
                       <span
                         className={
-                          order.status === "success"
+                          order.status === "success" || order.status === "delivered"
                             ? styles.statusBadgeSuccess
-                            : styles.statusBadgeCancel
+                            : order.status === "cancelled"
+                            ? styles.statusBadgeCancel
+                            : styles.statusBadgeDelivering
                         }
                       >
                         <i
                           className={
-                            order.status === "success"
+                            order.status === "success" || order.status === "delivered"
                               ? "fa-solid fa-check"
-                              : "fa-solid fa-xmark"
+                              : order.status === "cancelled"
+                              ? "fa-solid fa-xmark"
+                              : "fa-solid fa-truck-fast"
                           }
                         />
                       </span>
                       <div className={styles.orderInfo}>
                         <h2>
-                          {order.status === "success"
+                          {order.status === "success" || order.status === "delivered"
                             ? "Arrived in 10 minutes"
-                            : "Order Cancelled"}
+                            : order.status === "cancelled"
+                            ? "Order Cancelled"
+                            : "Order is on the way"}
                         </h2>
                         <p>
                           ₹{order.total_amount} •{" "}

@@ -12,12 +12,22 @@ import {
   type Address,
 } from "../../services/addresses";
 import LocationMap from "./LocationMap";
-/**
- * Learning TODO map for frontend/backend connection:
- * - Auth: use services/auth.ts from this file for login/register/me/logout.
- * - Cart: use services/cart.ts when opening the cart and changing quantities.
- * - Checkout: use services/orders.ts createOrder() from the Pay Now button.
- */
+import { createOrder } from "../../services/orders";
+
+const loadRazorpayScript = () => {
+  return new Promise<boolean>((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 type NavbarProps = {
   onLogoClick?: () => void;
 };
@@ -182,6 +192,70 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
     } catch {
       setFormError("Failed to save address. Please try again.");
     } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    if (!user) {
+      setAuthModal("login");
+      return;
+    }
+    if (!selectedAddress) {
+      setFormError("Please select or add a delivery address.");
+      setAddressSelectorOpen(true);
+      return;
+    }
+
+    setFormSubmitting(true);
+    setFormError("");
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setFormError("Failed to load Razorpay payment gateway. Please try again.");
+        setFormSubmitting(false);
+        return;
+      }
+
+      const options = {
+        key: "rzp_test_TMSFHLlbOpBdfe",
+        amount: (totalAmount + 10) * 100, // INR in Paisa
+        currency: "INR",
+        name: "Binzo",
+        description: "Grocery Order Payment",
+        handler: async (_paymentResponse: any) => {
+          try {
+            const order = await createOrder({ address_id: selectedAddress.id });
+            await refreshCart();
+            setIsCartOpen(false);
+            setFormSubmitting(false);
+            navigate(`/order/${order.id}`);
+          } catch (err: any) {
+            console.error("Order creation failed after payment:", err);
+            setFormError("Payment succeeded but order creation failed. Please contact support.");
+            setFormSubmitting(false);
+          }
+        },
+        prefill: {
+          name: user.name || "",
+          email: user.email || "",
+        },
+        theme: {
+          color: "#4F46E5",
+        },
+        modal: {
+          ondismiss: () => {
+            setFormSubmitting(false);
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Razorpay error", err);
+      setFormError("An error occurred during payment init.");
       setFormSubmitting(false);
     }
   };
@@ -698,12 +772,24 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                 </div>
               </div>
 
+              {formError && (
+                <p className={styles.mapFormError} style={{ margin: '0.75rem 1.25rem 0', textAlign: 'center' }}>
+                  {formError}
+                </p>
+              )}
+
               <div className={styles.payBar}>
                 <span>
                   <strong>₹{totalAmount + 10}</strong>
                   Total
                 </span>
-                <button>Pay Now</button>
+                <button
+                  type="button"
+                  onClick={handlePayNow}
+                  disabled={formSubmitting}
+                >
+                  {formSubmitting ? "Processing..." : "Pay Now"}
+                </button>
               </div>
             </section>
           </aside>
