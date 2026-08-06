@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { getCurrentUser } from "../services/auth";
 import { getOrders, type Order } from "../services/orders";
 import { createAddress, deleteAddress, getAddresses, type Address } from "../services/addresses";
+import LocationMap from "../components/Navbar/LocationMap";
 import styles from "./OrdersPage.module.css";
 
 
@@ -19,12 +20,18 @@ const OrdersPage = () => {
 
   // Add address modal state
   const [showModal, setShowModal] = useState(false);
-  const [formLabel, setFormLabel] = useState("");
-  const [formAddress, setFormAddress] = useState("");
-  const [formIsDefault, setFormIsDefault] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]);
+  const [mapAddressText, setMapAddressText] = useState("");
+  const [formHouseNo, setFormHouseNo] = useState("");
+  const [formFloor, setFormFloor] = useState("");
+  const [formNearbyLandmark, setFormNearbyLandmark] = useState("");
+  const [formAddressLabelType, setFormAddressLabelType] = useState<"Home" | "Work" | "Hotel" | "Other">("Home");
+  const [formCustomLabel, setFormCustomLabel] = useState("");
+  const [formReceiverName, setFormReceiverName] = useState("");
+  const [formReceiverPhone, setFormReceiverPhone] = useState("");
   const [formError, setFormError] = useState("");
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const labelInputRef = useRef<HTMLInputElement>(null);
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,13 +85,39 @@ const OrdersPage = () => {
     };
   }, [navigate, view]);
 
+  // Geocode current position when map opens
+  useEffect(() => {
+    if (showModal && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.display_name) {
+                setMapAddressText(data.display_name);
+              }
+            }).catch(() => {});
+        },
+        () => {}
+      );
+    }
+  }, [showModal]);
+
+  const handleMapLocationChange = (lat: number, lng: number, addressText: string) => {
+    setMapCenter([lat, lng]);
+    setMapAddressText(addressText);
+  };
+
   const openModal = () => {
-    setFormLabel("");
-    setFormAddress("");
-    setFormIsDefault(false);
+    setFormHouseNo("");
+    setFormFloor("");
+    setFormNearbyLandmark("");
+    setFormCustomLabel("");
+    setFormReceiverName("");
+    setFormReceiverPhone("");
     setFormError("");
     setShowModal(true);
-    setTimeout(() => labelInputRef.current?.focus(), 50);
   };
 
   const closeModal = () => setShowModal(false);
@@ -103,24 +136,31 @@ const OrdersPage = () => {
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formLabel.trim() || !formAddress.trim()) {
-      setFormError("Both label and address are required.");
+    if (!formHouseNo.trim() || !formReceiverName.trim()) {
+      setFormError("House/Flat details and Receiver Name are required.");
       return;
     }
     setFormSubmitting(true);
     setFormError("");
+
+    const completeAddressString = [
+      formHouseNo.trim(),
+      formFloor.trim() ? `Floor ${formFloor.trim()}` : "",
+      mapAddressText || "Locating...",
+      formNearbyLandmark.trim() ? `Near ${formNearbyLandmark.trim()}` : ""
+    ].filter(Boolean).join(", ");
+
+    const labelName = formAddressLabelType === "Other" && formCustomLabel.trim() 
+      ? formCustomLabel.trim() 
+      : formAddressLabelType;
+
     try {
       const created = await createAddress({
-        label: formLabel.trim(),
-        address: formAddress.trim(),
-        is_default: formIsDefault,
+        label: labelName,
+        address: completeAddressString,
+        is_default: addresses.length === 0,
       });
-      setAddresses((prev) => {
-        const updated = formIsDefault
-          ? prev.map((a) => ({ ...a, is_default: false }))
-          : prev;
-        return [...updated, created];
-      });
+      setAddresses((prev) => [...prev, created]);
       closeModal();
     } catch {
       setFormError("Failed to save address. Please try again.");
@@ -235,88 +275,160 @@ const OrdersPage = () => {
                 )}
               </div>
             </div>
-
-              {/* Add address modal */}
-            {showModal && (
-              <div
-                className={styles.modalOverlay}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Add new address"
-                onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
-              >
-                <div className={styles.modal}>
-                  <div className={styles.modalHeader}>
-                    <h2 className={styles.modalTitle}>Add new address</h2>
-                    <button
-                      type="button"
-                      className={styles.modalClose}
-                      aria-label="Close"
+              {/* Interactive Map Modal Overlay */}
+              {showModal && (
+                <div className={styles.mapModalOverlay}>
+                  <div className={styles.mapModal}>
+                    <button 
+                      type="button" 
+                      className={styles.closeMapModalBtn} 
                       onClick={closeModal}
+                      aria-label="Close Map Modal"
                     >
                       <i className="fa-solid fa-xmark" />
                     </button>
+
+                    <div className={styles.mapModalContainer}>
+                      {/* Left Side: Map Selector */}
+                      <div className={styles.mapSection}>
+                        <div className={styles.mapSearchBox}>
+                          <i className="fa-solid fa-magnifying-glass" />
+                          <input 
+                            type="text" 
+                            value={mapAddressText}
+                            onChange={(e) => setMapAddressText(e.target.value)}
+                            placeholder="Search delivery location..."
+                          />
+                          {mapAddressText && (
+                            <button type="button" onClick={() => setMapAddressText("")}>
+                              <i className="fa-solid fa-xmark" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className={styles.leafletWrapper}>
+                          <LocationMap center={mapCenter} onLocationChange={handleMapLocationChange} />
+                        </div>
+
+                        <div className={styles.mapOverlayFooter}>
+                          <div className={styles.mapPinIndicator}>
+                            <i className="fa-solid fa-location-crosshairs" />
+                            <div>
+                              <h5>Delivering your order to</h5>
+                              <p>{mapAddressText || "Locating..."}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Complete Address Entry Form */}
+                      <div className={styles.detailsFormSection}>
+                        <h3>Enter complete address</h3>
+                        <form onSubmit={handleAddAddress}>
+                          <div className={styles.fieldGroup}>
+                            <label>Save address as *</label>
+                            <div className={styles.labelTypeRow}>
+                              {(["Home", "Work", "Hotel", "Other"] as const).map((type) => (
+                                <button
+                                  key={type}
+                                  type="button"
+                                  className={`${styles.labelTypeBtn} ${formAddressLabelType === type ? styles.labelTypeBtnSelected : ""}`}
+                                  onClick={() => setFormAddressLabelType(type)}
+                                >
+                                  <i className={
+                                    type === "Home" ? "fa-solid fa-house" :
+                                    type === "Work" ? "fa-solid fa-briefcase" :
+                                    type === "Hotel" ? "fa-solid fa-hotel" : "fa-solid fa-location-dot"
+                                  } />
+                                  {type}
+                                </button>
+                              ))}
+                            </div>
+                            {formAddressLabelType === "Other" && (
+                              <input 
+                                type="text"
+                                className={styles.mapFormInput}
+                                placeholder="Custom label (e.g. Parents, Gym)"
+                                value={formCustomLabel}
+                                onChange={(e) => setFormCustomLabel(e.target.value)}
+                              />
+                            )}
+                          </div>
+
+                          <div className={styles.fieldGroup}>
+                            <input 
+                              type="text"
+                              className={styles.mapFormInput}
+                              placeholder="Flat / House no / Building name *"
+                              value={formHouseNo}
+                              onChange={(e) => setFormHouseNo(e.target.value)}
+                            />
+                          </div>
+
+                          <div className={styles.fieldGroup}>
+                            <input 
+                              type="text"
+                              className={styles.mapFormInput}
+                              placeholder="Floor (optional)"
+                              value={formFloor}
+                              onChange={(e) => setFormFloor(e.target.value)}
+                            />
+                          </div>
+
+                          <div className={styles.fieldGroup}>
+                            <label>Area / Sector / Locality *</label>
+                            <div className={styles.readOnlyLocalityText}>
+                              {mapAddressText || "Checking address details..."}
+                            </div>
+                          </div>
+
+                          <div className={styles.fieldGroup}>
+                            <input 
+                              type="text"
+                              className={styles.mapFormInput}
+                              placeholder="Nearby landmark (optional)"
+                              value={formNearbyLandmark}
+                              onChange={(e) => setFormNearbyLandmark(e.target.value)}
+                            />
+                          </div>
+
+                          <p className={styles.detailsHelpText}>Enter your details for seamless delivery experience</p>
+
+                          <div className={styles.fieldGroup}>
+                            <input 
+                              type="text"
+                              className={styles.mapFormInput}
+                              placeholder="Your name *"
+                              value={formReceiverName}
+                              onChange={(e) => setFormReceiverName(e.target.value)}
+                            />
+                          </div>
+
+                          <div className={styles.fieldGroup}>
+                            <input 
+                              type="text"
+                              className={styles.mapFormInput}
+                              placeholder="Your phone number (optional)"
+                              value={formReceiverPhone}
+                              onChange={(e) => setFormReceiverPhone(e.target.value)}
+                            />
+                          </div>
+
+                          {formError && <p className={styles.mapFormError}>{formError}</p>}
+
+                          <button 
+                            type="submit" 
+                            className={styles.mapFormSubmitBtn}
+                            disabled={formSubmitting}
+                          >
+                            {formSubmitting ? "Saving Address..." : "Save Address"}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
                   </div>
-
-                  <form onSubmit={handleAddAddress} className={styles.modalForm} noValidate>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel} htmlFor="addr-label">Label</label>
-                      <input
-                        id="addr-label"
-                        ref={labelInputRef}
-                        type="text"
-                        className={styles.formInput}
-                        placeholder="e.g. Home, Work, Parents"
-                        value={formLabel}
-                        onChange={(e) => setFormLabel(e.target.value)}
-                        maxLength={40}
-                      />
-                    </div>
-
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel} htmlFor="addr-address">Full address</label>
-                      <textarea
-                        id="addr-address"
-                        className={styles.formTextarea}
-                        placeholder="Building, street, area, city, state"
-                        value={formAddress}
-                        onChange={(e) => setFormAddress(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-
-                    <label className={styles.formCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={formIsDefault}
-                        onChange={(e) => setFormIsDefault(e.target.checked)}
-                      />
-                      Set as default address
-                    </label>
-
-                    {formError && <p className={styles.formError}>{formError}</p>}
-
-                    <div className={styles.modalActions}>
-                      <button
-                        type="button"
-                        className={styles.modalCancelBtn}
-                        onClick={closeModal}
-                        disabled={formSubmitting}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className={styles.modalSaveBtn}
-                        disabled={formSubmitting}
-                      >
-                        {formSubmitting ? "Saving…" : "Save address"}
-                      </button>
-                    </div>
-                  </form>
                 </div>
-              </div>
-            )}
+              )}
             </>
           ) : (
             <div className={styles.orderList}>

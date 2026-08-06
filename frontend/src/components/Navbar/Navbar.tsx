@@ -6,13 +6,19 @@ import { getProducts } from "../../services/catalog";
 import type { Product } from "../../data/products";
 import AuthModal from "../AuthModal/AuthModal";
 import { useCart } from "../../context/CartContext";
+import { getAddresses, createAddress, type Address } from "../../services/addresses";
+import LocationMap from "./LocationMap";
 /**
  * Learning TODO map for frontend/backend connection:
  * - Auth: use services/auth.ts from this file for login/register/me/logout.
  * - Cart: use services/cart.ts when opening the cart and changing quantities.
  * - Checkout: use services/orders.ts createOrder() from the Pay Now button.
  */
-const Navbar = () => {
+type NavbarProps = {
+  onLogoClick?: () => void;
+};
+
+const Navbar = ({ onLogoClick }: NavbarProps) => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
@@ -34,6 +40,24 @@ const Navbar = () => {
   const [locationRequestId, setLocationRequestId] = useState(0);
   const navigate = useNavigate();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [addressSelectorOpen, setAddressSelectorOpen] = useState(false);
+
+  // Map / Add Address Modal state
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]); // Delhi default
+  const [mapAddressText, setMapAddressText] = useState("");
+  const [formHouseNo, setFormHouseNo] = useState("");
+  const [formFloor, setFormFloor] = useState("");
+  const [formNearbyLandmark, setFormNearbyLandmark] = useState("");
+  const [formAddressLabelType, setFormAddressLabelType] = useState<"Home" | "Work" | "Hotel" | "Other">("Home");
+  const [formCustomLabel, setFormCustomLabel] = useState("");
+  const [formReceiverName, setFormReceiverName] = useState("");
+  const [formReceiverPhone, setFormReceiverPhone] = useState("");
+  const [formError, setFormError] = useState("");
+  const [formSubmitting, setFormSubmitting] = useState(false);
+
   const {
     itemCount,
     totalAmount,
@@ -56,6 +80,91 @@ const Navbar = () => {
       setIsCartOpen(false);
     }
   }, [isCartOpen, itemCount]);
+
+  // Fetch saved addresses when cart opens (authenticated users only)
+  useEffect(() => {
+    if (!isCartOpen || !user) return;
+    getAddresses()
+      .then((data) => {
+        setAddresses(data);
+        if (data.length > 0 && !selectedAddress) {
+          const def = data.find((a) => a.is_default) ?? data[0];
+          setSelectedAddress(def);
+        }
+      })
+      .catch(() => { /* silently skip */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCartOpen, user]);
+
+  // Request user current location for map default coordinates
+  useEffect(() => {
+    if (showMapModal && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.display_name) {
+                setMapAddressText(data.display_name);
+              }
+            }).catch(() => {});
+        },
+        () => {}
+      );
+    }
+  }, [showMapModal]);
+
+  const handleMapLocationChange = (lat: number, lng: number, addressText: string) => {
+    setMapCenter([lat, lng]);
+    setMapAddressText(addressText);
+  };
+
+  const handleSaveMapAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formHouseNo.trim()) {
+      setFormError("Flat / House no / Building name is required.");
+      return;
+    }
+    setFormSubmitting(true);
+    setFormError("");
+
+    // Combine complete address string
+    const completeAddressString = [
+      formHouseNo.trim(),
+      formFloor.trim() ? `Floor ${formFloor.trim()}` : "",
+      mapAddressText,
+      formNearbyLandmark.trim() ? `Near ${formNearbyLandmark.trim()}` : ""
+    ].filter(Boolean).join(", ");
+
+    const labelName = formAddressLabelType === "Other" && formCustomLabel.trim() 
+      ? formCustomLabel.trim() 
+      : formAddressLabelType;
+
+    try {
+      const created = await createAddress({
+        label: labelName,
+        address: completeAddressString,
+        is_default: addresses.length === 0, // default if first address
+      });
+
+      setAddresses((prev) => [...prev, created]);
+      setSelectedAddress(created);
+      setShowMapModal(false);
+      
+      // Clear form
+      setFormHouseNo("");
+      setFormFloor("");
+      setFormNearbyLandmark("");
+      setFormCustomLabel("");
+      setFormReceiverName("");
+      setFormReceiverPhone("");
+    } catch {
+      setFormError("Failed to save address. Please try again.");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -188,10 +297,22 @@ const Navbar = () => {
       <nav className={styles.navbar}>
         <div className={styles.left}>
           <h1 className={styles.logo}>
-            <span className={styles.logoPrimary} onClick={() => navigate("/")}>
+            <span
+              className={styles.logoPrimary}
+              onClick={() => {
+                navigate("/");
+                if (onLogoClick) onLogoClick();
+              }}
+            >
               Bin
             </span>
-            <span className={styles.logoAccent} onClick={() => navigate("/")}>
+            <span
+              className={styles.logoAccent}
+              onClick={() => {
+                navigate("/");
+                if (onLogoClick) onLogoClick();
+              }}
+            > 
               zo
             </span>
           </h1>
@@ -518,14 +639,34 @@ const Navbar = () => {
               </section>
             </div>
 
-            <section className={`${styles.cartCard} ${styles.cartFooter}`}>
-              <div className={styles.addressHeader}>
+             <section className={`${styles.cartCard} ${styles.cartFooter}`}>
+              {/* Delivery address row */}
+              <div className={styles.addressHeader} onClick={() => user && setAddressSelectorOpen(true)} style={{ cursor: user ? 'pointer' : 'default' }}>
                 <i className="fa-solid fa-location-dot"></i>
-                <div>
-                  <h2>
-                    Delivering to {user?.name ?? user?.email ?? "Your address"}
-                  </h2>
-                  <p>{locationLabel}</p>
+                <div className={styles.addressHeaderBody}>
+                  <div className={styles.addressHeaderTop}>
+                    <div>
+                      <h2>Delivering to {user?.name ?? user?.email ?? "Your Location"}</h2>
+                      <p>
+                        {user 
+                          ? (selectedAddress ? selectedAddress.address : "No saved address — click to add")
+                          : locationLabel
+                        }
+                      </p>
+                    </div>
+                    {user && (
+                      <button
+                        type="button"
+                        className={styles.changeAddressBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAddressSelectorOpen(true);
+                        }}
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -538,6 +679,226 @@ const Navbar = () => {
               </div>
             </section>
           </aside>
+        </div>
+      )}
+
+      {/* Select Delivery Address Side Panel Overlay */}
+      {addressSelectorOpen && (
+        <div className={styles.sidePanelOverlay} onClick={() => setAddressSelectorOpen(false)}>
+          <aside className={styles.addressSidePanel} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sidePanelHeader}>
+              <button 
+                type="button" 
+                className={styles.sidePanelBackBtn} 
+                onClick={() => setAddressSelectorOpen(false)}
+                aria-label="Back"
+              >
+                <i className="fa-solid fa-arrow-left" />
+              </button>
+              <h2>Select delivery address</h2>
+            </div>
+
+            <button 
+              type="button" 
+              className={styles.addAddressActionRow}
+              onClick={() => {
+                setShowMapModal(true);
+                setAddressSelectorOpen(false);
+              }}
+            >
+              <i className="fa-solid fa-plus" />
+              <span>Add a new address</span>
+            </button>
+
+            <div className={styles.savedAddressesList}>
+              <h3>Your saved address</h3>
+              {addresses.length === 0 ? (
+                <p className={styles.noAddressesText}>No addresses saved yet.</p>
+              ) : (
+                addresses.map((addr) => (
+                  <button
+                    key={addr.id}
+                    type="button"
+                    className={`${styles.savedAddressRow} ${selectedAddress?.id === addr.id ? styles.selectedSavedAddress : ''}`}
+                    onClick={() => {
+                      setSelectedAddress(addr);
+                      setAddressSelectorOpen(false);
+                    }}
+                  >
+                    <div className={styles.addressIconWrapper}>
+                      <i className={
+                        addr.label.toLowerCase() === 'home' ? 'fa-solid fa-house' : 
+                        addr.label.toLowerCase() === 'work' ? 'fa-solid fa-briefcase' : 
+                        addr.label.toLowerCase() === 'hotel' ? 'fa-solid fa-hotel' : 'fa-solid fa-location-dot'
+                      } />
+                    </div>
+                    <div className={styles.addressRowInfo}>
+                      <h4>{addr.label}</h4>
+                      <p>{addr.address}</p>
+                    </div>
+                    {selectedAddress?.id === addr.id && (
+                      <i className="fa-solid fa-circle-check" style={{ color: '#4F46E5', fontSize: '1.2rem', marginLeft: 'auto' }} />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Interactive Map Modal Overlay */}
+      {showMapModal && (
+        <div className={styles.mapModalOverlay}>
+          <div className={styles.mapModal}>
+            <button 
+              type="button" 
+              className={styles.closeMapModalBtn} 
+              onClick={() => setShowMapModal(false)}
+              aria-label="Close Map Modal"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
+
+            <div className={styles.mapModalContainer}>
+              {/* Left Side: Map Selector */}
+              <div className={styles.mapSection}>
+                <div className={styles.mapSearchBox}>
+                  <i className="fa-solid fa-magnifying-glass" />
+                  <input 
+                    type="text" 
+                    value={mapAddressText}
+                    onChange={(e) => setMapAddressText(e.target.value)}
+                    placeholder="Search delivery location..."
+                  />
+                  {mapAddressText && (
+                    <button type="button" onClick={() => setMapAddressText("")}>
+                      <i className="fa-solid fa-xmark" />
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.leafletWrapper}>
+                  <LocationMap center={mapCenter} onLocationChange={handleMapLocationChange} />
+                </div>
+
+                <div className={styles.mapOverlayFooter}>
+                  <div className={styles.mapPinIndicator}>
+                    <i className="fa-solid fa-location-crosshairs" />
+                    <div>
+                      <h5>Delivering your order to</h5>
+                      <p>{mapAddressText || "Locating..."}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Complete Address Entry Form */}
+              <div className={styles.detailsFormSection}>
+                <h3>Enter complete address</h3>
+                <form onSubmit={handleSaveMapAddress}>
+                  <div className={styles.fieldGroup}>
+                    <label>Save address as *</label>
+                    <div className={styles.labelTypeRow}>
+                      {(["Home", "Work", "Hotel", "Other"] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`${styles.labelTypeBtn} ${formAddressLabelType === type ? styles.labelTypeBtnSelected : ""}`}
+                          onClick={() => setFormAddressLabelType(type)}
+                        >
+                          <i className={
+                            type === "Home" ? "fa-solid fa-house" :
+                            type === "Work" ? "fa-solid fa-briefcase" :
+                            type === "Hotel" ? "fa-solid fa-hotel" : "fa-solid fa-location-dot"
+                          } />
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                    {formAddressLabelType === "Other" && (
+                      <input 
+                        type="text"
+                        className={styles.mapFormInput}
+                        placeholder="Custom label (e.g. Parents, Gym)"
+                        value={formCustomLabel}
+                        onChange={(e) => setFormCustomLabel(e.target.value)}
+                      />
+                    )}
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <input 
+                      type="text"
+                      className={styles.mapFormInput}
+                      placeholder="Flat / House no / Building name *"
+                      value={formHouseNo}
+                      onChange={(e) => setFormHouseNo(e.target.value)}
+                    />
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <input 
+                      type="text"
+                      className={styles.mapFormInput}
+                      placeholder="Floor (optional)"
+                      value={formFloor}
+                      onChange={(e) => setFormFloor(e.target.value)}
+                    />
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <label>Area / Sector / Locality *</label>
+                    <div className={styles.readOnlyLocalityText}>
+                      {mapAddressText || "Checking address details..."}
+                    </div>
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <input 
+                      type="text"
+                      className={styles.mapFormInput}
+                      placeholder="Nearby landmark (optional)"
+                      value={formNearbyLandmark}
+                      onChange={(e) => setFormNearbyLandmark(e.target.value)}
+                    />
+                  </div>
+
+                  <p className={styles.detailsHelpText}>Enter your details for seamless delivery experience</p>
+
+                  <div className={styles.fieldGroup}>
+                    <input 
+                      type="text"
+                      className={styles.mapFormInput}
+                      placeholder="Your name *"
+                      value={formReceiverName}
+                      onChange={(e) => setFormReceiverName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <input 
+                      type="text"
+                      className={styles.mapFormInput}
+                      placeholder="Your phone number (optional)"
+                      value={formReceiverPhone}
+                      onChange={(e) => setFormReceiverPhone(e.target.value)}
+                    />
+                  </div>
+
+                  {formError && <p className={styles.mapFormError}>{formError}</p>}
+
+                  <button 
+                    type="submit" 
+                    className={styles.mapFormSubmitBtn}
+                    disabled={formSubmitting}
+                  >
+                    {formSubmitting ? "Saving Address..." : "Save Address"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
