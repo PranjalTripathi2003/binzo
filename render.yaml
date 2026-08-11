@@ -2,7 +2,7 @@ services:
   - type: web
     name: binzo
     runtime: node
-    buildCommand: npm ci && npm install --prefix frontend && npm ci --prefix backend && npm run build
+    buildCommand: npm ci && npm install --prefix frontend && npm install --prefix backend && npm run build
     startCommand: npm run start:prod --prefix backend
     autoDeployTrigger: commit
     envVars:
