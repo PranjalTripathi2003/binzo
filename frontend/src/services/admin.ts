@@ -1,4 +1,4 @@
-import { apiFetch } from "./api";
+import { API_BASE_URL, apiFetch, refreshAccessToken } from "./api";
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -168,17 +168,34 @@ export async function deleteProduct(id: string): Promise<void> {
  * Returns the public URL of the stored image.
  */
 export async function uploadProductImage(file: File): Promise<string> {
-  const token = localStorage.getItem("access_token");
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("http://localhost:3000/api/products/upload-image", {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: formData,
-  });
+  const upload = (token: string | null) =>
+    fetch(`${API_BASE_URL}/products/upload-image`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+  let token = localStorage.getItem("access_token");
+  let response = await upload(token);
+
+  if (response.status === 401) {
+    token = await refreshAccessToken();
+    if (token) {
+      response = await upload(token);
+    }
+  }
 
   const json = await response.json();
+
+  if (response.status === 401) {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    throw new Error("unauthenticated");
+  }
+
   if (!response.ok || !json.success) {
     throw new Error(json.message || "Image upload failed");
   }

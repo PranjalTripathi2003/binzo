@@ -10,6 +10,7 @@ import {
   type Address,
 } from "../services/addresses";
 import LocationMap from "../components/Navbar/LocationMap";
+import { getOrderDeliveryTimeline } from "../utils/delivery";
 import styles from "./OrdersPage.module.css";
 
 const OrdersPage = () => {
@@ -498,13 +499,18 @@ const OrdersPage = () => {
                   </p>
                 </div>
               ) : (
-                orders.map((order) => (
+                orders.map((order) => {
+                  const timeline = getOrderDeliveryTimeline(order);
+                  const isDelivered = timeline.computedStatus === "success";
+                  const isCancelled = timeline.computedStatus === "cancelled";
+
+                  return (
                   <article
                     key={order.id}
                     className={`${styles.orderCard} ${
-                      order.status === "success" || order.status === "delivered"
+                      isDelivered
                         ? styles.orderCardSuccess
-                        : order.status === "cancelled"
+                        : isCancelled
                         ? styles.orderCardCancel
                         : styles.orderCardDelivering
                     }`}
@@ -513,18 +519,18 @@ const OrdersPage = () => {
                     <div className={styles.orderHeader}>
                       <span
                         className={
-                          order.status === "success" || order.status === "delivered"
+                          isDelivered
                             ? styles.statusBadgeSuccess
-                            : order.status === "cancelled"
+                            : isCancelled
                             ? styles.statusBadgeCancel
                             : styles.statusBadgeDelivering
                         }
                       >
                         <i
                           className={
-                            order.status === "success" || order.status === "delivered"
+                            isDelivered
                               ? "fa-solid fa-check"
-                              : order.status === "cancelled"
+                              : isCancelled
                               ? "fa-solid fa-xmark"
                               : "fa-solid fa-truck-fast"
                           }
@@ -532,11 +538,11 @@ const OrdersPage = () => {
                       </span>
                       <div className={styles.orderInfo}>
                         <h2>
-                          {order.status === "success" || order.status === "delivered"
-                            ? "Arrived in 10 minutes"
-                            : order.status === "cancelled"
+                          {isDelivered
+                            ? "Order Delivered"
+                            : isCancelled
                             ? "Order Cancelled"
-                            : "Order is on the way"}
+                            : `Arriving in ${timeline.remainingMinutes} minutes`}
                         </h2>
                         <p>
                           ₹{order.total_amount} •{" "}
@@ -570,7 +576,8 @@ const OrdersPage = () => {
                       ))}
                     </div>
                   </article>
-                ))
+                  );
+                })
               )}
             </div>
           )}

@@ -135,6 +135,7 @@ export class OrderService {
           user_id: userId,
           address_id: dto.address_id,
           total_amount: totalAmount,
+          delivery_eta_minutes: dto.delivery_eta_minutes ?? 15,
         },
       ])
       .select()
@@ -239,14 +240,18 @@ export class OrderService {
   }
 
   /**
-   * Cancels an order unless it is already delivered or cancelled.
+   * Cancels an order unless it is already packed, picked, delivered, or cancelled.
    */
   async cancel(userId: string, orderId: string): Promise<unknown> {
     const order = (await this.findOne(userId, orderId)) as OrderRow;
 
-    if (['delivered', 'cancelled'].includes(order.status)) {
+    if (
+      ['packed', 'out_for_delivery', 'delivered', 'success', 'cancelled'].includes(
+        order.status,
+      )
+    ) {
       throw new HttpException(
-        'Delivered or cancelled orders cannot be cancelled',
+        'Orders cannot be cancelled once packed for delivery',
         HttpStatus.BAD_REQUEST,
       );
     }

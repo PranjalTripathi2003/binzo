@@ -11,8 +11,10 @@ export class UpdateOrderStatusDto {
     'pending',
     'confirmed',
     'preparing',
+    'packed',
     'out_for_delivery',
     'delivered',
+    'success',
     'cancelled',
   ])
   status: string;

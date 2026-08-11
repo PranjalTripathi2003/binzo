@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3000/api";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api";
 
 export type ApiResponse<T> = {
   success: boolean;
@@ -80,4 +81,42 @@ export async function apiFetch<T>(
   }
 
   return json.data;
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("refresh_token");
+
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!refreshResponse.ok) {
+      return null;
+    }
+
+    const refreshJson: ApiResponse<{
+      access_token: string;
+      refresh_token: string;
+    }> = await refreshResponse.json();
+
+    if (!refreshJson.success || !refreshJson.data) {
+      return null;
+    }
+
+    const { access_token, refresh_token } = refreshJson.data;
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("refresh_token", refresh_token);
+
+    return access_token;
+  } catch (err) {
+    console.error("Transparent token refresh failed:", err);
+    return null;
+  }
 }

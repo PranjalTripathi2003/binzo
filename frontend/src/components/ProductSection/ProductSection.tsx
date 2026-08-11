@@ -5,18 +5,28 @@ import ProductCard from "../ProductCard/ProductCard";
 
 type ProductSectionProps = {
   products: Product[];
+  dairyCategoryId?: string;
+  snacksCategoryId?: string;
 };
 
-const ProductSection = ({ products }: ProductSectionProps) => {
+const ProductSection = ({
+  products,
+  dairyCategoryId,
+  snacksCategoryId,
+}: ProductSectionProps) => {
   const rowRef1 = useRef<HTMLDivElement>(null);
   const rowRef2 = useRef<HTMLDivElement>(null);
   const [scrolled1, setScrolled1] = useState(false);
   const [scrolled2, setScrolled2] = useState(false);
 
-  const featuredProducts = products.slice(0, 8);
-  const pantryProducts = products.slice(8, 16);
-  const secondRowProducts =
-    pantryProducts.length > 0 ? pantryProducts : featuredProducts;
+  const dairyProducts = dairyCategoryId
+    ? products.filter((product) => product.categoryId === dairyCategoryId)
+    : products;
+  const snackProducts = snacksCategoryId
+    ? products.filter((product) => product.categoryId === snacksCategoryId)
+    : [];
+  const featuredProducts = dairyProducts.slice(0, 8);
+  const secondRowProducts = snackProducts.slice(0, 8);
   const showFirstRowArrows = featuredProducts.length > 5;
   const showSecondRowArrows = secondRowProducts.length > 5;
 
@@ -73,7 +83,7 @@ const ProductSection = ({ products }: ProductSectionProps) => {
           </button>
         )}
       </div>
-      <h2 className={styles.heading}> Popular Picks</h2>
+      <h2 className={styles.heading}>Snacks & Munchies</h2>
       <div className={styles.carouselWrapper}>
         {showSecondRowArrows && scrolled2 && (
           <button

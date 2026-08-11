@@ -133,6 +133,13 @@ const HomePage = () => {
     }
   };
 
+  const dairyCategoryId = categories.find(
+    (category) => category.title === "Dairy, Bread & Eggs",
+  )?.id;
+  const snacksCategoryId = categories.find(
+    (category) => category.title === "Snacks & Munchies",
+  )?.id;
+
   return (
     <>
       <Navbar onLogoClick={() => setShowCategoryBrowser(false)} />
@@ -163,7 +170,11 @@ const HomePage = () => {
             </p>
           )}
           <CategoryGrid categories={categories} />
-          <ProductSection products={products} />
+          <ProductSection
+            products={products}
+            dairyCategoryId={dairyCategoryId}
+            snacksCategoryId={snacksCategoryId}
+          />
         </main>
       )}
       <Footer />

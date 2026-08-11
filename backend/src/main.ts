@@ -4,6 +4,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const allowedOrigins = [
+    'http://localhost:5173',
+    process.env.FRONTEND_URL,
+  ].filter((origin): origin is string => Boolean(origin));
 
   // Set API prefix: /api
   app.setGlobalPrefix('api');
@@ -18,7 +22,7 @@ async function bootstrap() {
 
   // Enable CORS for frontend connection
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
   });
 

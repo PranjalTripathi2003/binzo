@@ -13,6 +13,7 @@ import {
 } from "../../services/addresses";
 import LocationMap from "./LocationMap";
 import { createOrder } from "../../services/orders";
+import { getStoredDeliveryMinutes } from "../../utils/delivery";
 
 const loadRazorpayScript = () => {
   return new Promise<boolean>((resolve) => {
@@ -42,14 +43,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [deliveryMinutes] = useState(() => {
-    const storedMinutes = sessionStorage.getItem("delivery_minutes");
-    if (storedMinutes) return Number(storedMinutes);
-
-    const minutes = Math.floor(Math.random() * 26) + 5;
-    sessionStorage.setItem("delivery_minutes", String(minutes));
-    return minutes;
-  });
+  const [deliveryMinutes] = useState(getStoredDeliveryMinutes);
   const [locationLabel, setLocationLabel] = useState("Detecting location...");
   const [locationRequestId, setLocationRequestId] = useState(0);
   const navigate = useNavigate();
@@ -226,7 +220,10 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
         description: "Grocery Order Payment",
         handler: async (_paymentResponse: any) => {
           try {
-            const order = await createOrder({ address_id: selectedAddress.id });
+            const order = await createOrder({
+              address_id: selectedAddress.id,
+              delivery_eta_minutes: deliveryMinutes,
+            });
             await refreshCart();
             setIsCartOpen(false);
             setFormSubmitting(false);

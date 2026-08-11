@@ -33,6 +33,7 @@ type ProductImageDto = {
 
 type ProductDto = {
   id: string;
+  category_id: string;
   name: string;
   description?: string | null;
   product_variants?: ProductVariantDto[];
@@ -99,6 +100,7 @@ const toProduct = (product: ProductDto): Product => {
 
   return {
     id: product.id,
+    categoryId: product.category_id,
     title: product.name,
     description: product.description ?? undefined,
     image: images[0] ?? fallbackImage,

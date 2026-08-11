@@ -8,6 +8,7 @@ export type ProductUnit = {
 
 export type Product = {
   id: string;
+  categoryId?: string;
   title: string;
   description?: string;
   image: string;
@@ -18,6 +19,7 @@ export type Product = {
 export const products: Product[] = [
   {
     id: "amul-gold-milk",
+    categoryId: "dairy",
     title: "Amul Gold Milk",
     description: "Full cream milk, rich in calcium and nutrients.",
     image: "/images/milk.png",

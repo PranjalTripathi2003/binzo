@@ -17,6 +17,7 @@ export type Order = {
   status: string;
   total_amount: number | string;
   created_at: string;
+  delivery_eta_minutes?: number | string | null;
   addresses?: {
     label: string;
     address: string;
@@ -52,7 +53,9 @@ export async function getOrders(): Promise<Order[]> {
  * address_id is optional in the current backend, so you can start with an empty
  * object and add address selection later.
  */
-export async function createOrder(input: { address_id?: string } = {}) {
+export async function createOrder(
+  input: { address_id?: string; delivery_eta_minutes?: number } = {},
+) {
   return apiFetch<Order>("/orders", {
     method: "POST",
     body: JSON.stringify(input),
@@ -68,3 +71,28 @@ export async function getOrder(id: string): Promise<Order> {
   return apiFetch<Order>(`/orders/${id}`);
 }
 
+/**
+ * PATCH /api/orders/:id/cancel
+ *
+ * Cancels an active order. The backend rejects the request if the order is
+ * already delivered or cancelled.
+ */
+export async function cancelOrder(id: string): Promise<Order> {
+  return apiFetch<Order>(`/orders/${id}/cancel`, { method: "PATCH" });
+}
+
+/**
+ * PATCH /api/orders/:id/status
+ *
+ * Updates the order status directly. Used to mark an order as "success" once
+ * the delivery animation completes on the frontend.
+ */
+export async function updateOrderStatus(
+  id: string,
+  status: string
+): Promise<Order> {
+  return apiFetch<Order>(`/orders/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
