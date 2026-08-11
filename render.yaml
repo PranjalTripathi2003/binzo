@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: binzo-backend
+    name: binzo
     runtime: node
-    rootDir: backend
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start:prod
+    buildCommand: npm ci && npm ci --prefix frontend && npm ci --prefix backend && npm run build
+    startCommand: npm run start:prod --prefix backend
     autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
@@ -28,17 +27,6 @@ services:
       - key: RAZORPAY_KEY_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://binzo-frontend.onrender.com
-
-  - type: web
-    name: binzo-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    autoDeployTrigger: commit
-    envVars:
-      - key: NODE_VERSION
-        value: 22
+        value: https://binzo.onrender.com
       - key: VITE_API_BASE_URL
-        value: https://binzo-backend.onrender.com/api
+        value: /api
