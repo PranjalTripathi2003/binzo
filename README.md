@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Leaflet-Live_Maps-199900?style=for-the-badge&logo=leaflet&logoColor=white" alt="Leaflet" />
+  <a href="https://www.figma.com/design/hy5Vibkv2CirbqhWbstdW2/Binzo?node-id=70-1054&t=HdqinwGe20kZcMTu-0" target="_blank"><img src="https://img.shields.io/badge/Figma-Design_System-F24E1E?style=for-the-badge&logo=figma&logoColor=white" alt="Figma Design" /></a>
 </p>
 
 <p align="center">
@@ -18,6 +19,7 @@
 ## 📑 Table of Contents
 
 - [Features](#-features)
+- [UI/UX Design](#-uiux-design)
 - [Architecture & Tech Stack](#-architecture--tech-stack)
 - [Project Structure](#-project-structure)
 - [Database Schema & ER Diagram](#-database-schema--er-diagram)
@@ -54,6 +56,19 @@
 - **Category Management**: Create and manage top-level grocery categories with custom icons and banners.
 - **Order Lifecycle Dispatch**: Live order status updating (Pending $\to$ Confirmed $\to$ Out for Delivery $\to$ Delivered).
 - **Analytics & Metrics**: Visual breakdown of total sales, active orders, customer stats, and revenue trends.
+
+---
+
+## 🎨 UI/UX Design
+
+The application's interface, interactive components, responsive layout system, and design tokens are crafted in Figma.
+
+👉 **[View the Binzo Figma Design File](https://www.figma.com/design/hy5Vibkv2CirbqhWbstdW2/Binzo?node-id=70-1054&t=HdqinwGe20kZcMTu-0)**
+
+- **Design System Highlights**:
+  - Primary Theme: Indigo (`#4F46E5`) & Fresh Lime Accent (`#DCE546`)
+  - Typography: Clean typography powered by `Inter` & expressive branding via `Lobster`
+  - Component Library: Mobile-first responsive category tiles, product cards with unit selectors, floating persistent cart drawer, live route tracking map layouts, and admin analytics dashboards.
 
 ---
 
