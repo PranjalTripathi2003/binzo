@@ -57,13 +57,18 @@ export class OrderController {
       throw new HttpException('Invalid webhook signature', HttpStatus.BAD_REQUEST);
     }
     const payload = req.body as { event?: string; payload?: { payment?: { entity?: { order_id?: string } } } };
-    if (!['payment.captured', 'payment.failed'].includes(payload.event ?? '') || !payload.payload?.payment?.entity?.order_id) {
+    const eventType = payload.event;
+    const orderId = payload.payload?.payment?.entity?.order_id;
+    if (
+      (eventType !== 'payment.captured' && eventType !== 'payment.failed') ||
+      !orderId
+    ) {
       return { success: true, duplicate: false };
     }
     const duplicate = !(await this.orderService.processPaymentEvent(
       eventId,
-      payload.payload.payment.entity.order_id,
-      payload.event,
+      orderId,
+      eventType,
     ));
     return { success: true, duplicate };
   }
