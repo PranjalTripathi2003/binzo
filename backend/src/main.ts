@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   const allowedOrigins = [
     'http://localhost:5173',
     process.env.FRONTEND_URL,

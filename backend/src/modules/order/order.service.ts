@@ -45,6 +45,20 @@ export class OrderService {
 
   constructor(private supabaseService: SupabaseService) {}
 
+  /** Records a verified Razorpay event once and confirms its pending order. */
+  async processPaymentEvent(eventId: string, orderId: string, eventType: string): Promise<boolean> {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .rpc('process_razorpay_payment', {
+        p_event_id: eventId,
+        p_order_id: orderId,
+        p_signature_valid: true,
+        p_event_type: eventType,
+      });
+    if (error) throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    return data === true;
+  }
+
   /**
    * Reads all orders owned by a user, newest first.
    *
@@ -117,94 +131,22 @@ export class OrderService {
       await this.validateAddress(userId, dto.address_id);
     }
 
-    const cartItems = await this.getCartItems(userId);
-    if (cartItems.length === 0) {
-      throw new HttpException('Cart is empty', HttpStatus.BAD_REQUEST);
-    }
-
-    const totalAmount = cartItems.reduce((total, item) => {
-      const price = this.getVariantPrice(item.product_variants);
-      return total + price * item.quantity;
-    }, 0);
-
-    const orderResponse = (await this.supabaseService
+    const { data, error } = await this.supabaseService
       .getClient()
-      .from('orders')
-      .insert([
-        {
-          user_id: userId,
-          address_id: dto.address_id,
-          total_amount: totalAmount,
-          delivery_eta_minutes: dto.delivery_eta_minutes ?? 15,
-        },
-      ])
-      .select()
-      .single()) as SupabaseQueryResult<OrderRow>;
-    const order = orderResponse.data;
-    const orderError = orderResponse.error;
+      .rpc('checkout_order', {
+        p_user_id: userId,
+        p_address_id: dto.address_id ?? null,
+        p_delivery_eta_minutes: dto.delivery_eta_minutes ?? 15,
+      });
 
-    if (orderError) {
-      this.logger.error(
-        `Error creating order for user ${userId}: ${orderError.message}`,
-      );
-      throw new HttpException(
-        orderError.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    if (error) {
+      const status = error.message.includes('Cart is empty') || error.message.includes('Insufficient stock')
+        ? HttpStatus.BAD_REQUEST
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(error.message, status);
     }
-    if (!order) {
-      throw new HttpException(
-        'Order was not created',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const orderItems = cartItems.map((item) => ({
-      order_id: order.id,
-      variant_id: item.variant_id,
-      quantity: item.quantity,
-      price_at_purchase: this.getVariantPrice(item.product_variants),
-      note: item.note,
-    }));
-
-    const itemsResponse = (await this.supabaseService
-      .getClient()
-      .from('order_items')
-      .insert(orderItems)) as SupabaseQueryResult<unknown>;
-    const itemsError = itemsResponse.error;
-
-    if (itemsError) {
-      await this.supabaseService
-        .getClient()
-        .from('orders')
-        .delete()
-        .eq('id', order.id);
-      this.logger.error(
-        `Error creating order items for order ${order.id}: ${itemsError.message}`,
-      );
-      throw new HttpException(
-        itemsError.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const clearCartResponse = (await this.supabaseService
-      .getClient()
-      .from('cart_items')
-      .delete()
-      .eq('user_id', userId)) as SupabaseQueryResult<unknown>;
-    const clearCartError = clearCartResponse.error;
-
-    if (clearCartError) {
-      this.logger.error(
-        `Error clearing cart for user ${userId}: ${clearCartError.message}`,
-      );
-      throw new HttpException(
-        clearCartError.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
+    const order = data as OrderRow | null;
+    if (!order) throw new HttpException('Order was not created', HttpStatus.INTERNAL_SERVER_ERROR);
     return this.findOne(userId, order.id);
   }
 
@@ -216,7 +158,23 @@ export class OrderService {
     orderId: string,
     dto: UpdateOrderStatusDto,
   ): Promise<unknown> {
-    await this.findOne(userId, orderId);
+    const current = (await this.findOne(userId, orderId)) as OrderRow;
+    const transitions: Record<string, string[]> = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['preparing', 'cancelled'],
+      preparing: ['packed', 'cancelled'],
+      packed: ['out_for_delivery'],
+      out_for_delivery: ['delivered'],
+      delivered: ['success'],
+      success: [],
+      cancelled: [],
+    };
+    if (!transitions[current.status]?.includes(dto.status)) {
+      throw new HttpException(
+        `Invalid order status transition: ${current.status} -> ${dto.status}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const response = (await this.supabaseService
       .getClient()
@@ -224,6 +182,7 @@ export class OrderService {
       .update({ status: dto.status })
       .eq('id', orderId)
       .eq('user_id', userId)
+      .eq('status', current.status)
       .select(
         '*, addresses(*), order_items(*, product_variants(*, products(*)))',
       )
@@ -232,6 +191,9 @@ export class OrderService {
     const error = response.error;
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        throw new HttpException('Order status changed; reload and retry', HttpStatus.CONFLICT);
+      }
       this.logger.error(`Error updating order ${orderId}: ${error.message}`);
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

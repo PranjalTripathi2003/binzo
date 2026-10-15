@@ -5,6 +5,9 @@ import {
   Param,
   Patch,
   Post,
+  Headers,
+  HttpException,
+  HttpStatus,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +15,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderService } from './order.service';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 
 type AuthenticatedRequest = {
   user: {
@@ -28,7 +33,40 @@ type AuthenticatedRequest = {
 @UseGuards(AuthGuard('jwt'))
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /** POST /api/orders/webhooks/razorpay verifies the raw payload signature before database idempotency handling. */
+  @Post('webhooks/razorpay')
+  @UseGuards()
+  async razorpayWebhook(
+    @Req() req: { body: unknown; rawBody?: Buffer },
+    @Headers('x-razorpay-signature') signature?: string,
+    @Headers('x-razorpay-event-id') eventId?: string,
+  ) {
+    const secret = this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET');
+    if (!secret || !signature || !eventId || !req.rawBody) {
+      throw new HttpException('Invalid webhook signature or headers', HttpStatus.BAD_REQUEST);
+    }
+    const expected = createHmac('sha256', secret).update(req.rawBody).digest();
+    let supplied: Buffer;
+    try { supplied = Buffer.from(signature, 'hex'); } catch { supplied = Buffer.alloc(0); }
+    if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+      throw new HttpException('Invalid webhook signature', HttpStatus.BAD_REQUEST);
+    }
+    const payload = req.body as { event?: string; payload?: { payment?: { entity?: { order_id?: string } } } };
+    if (!['payment.captured', 'payment.failed'].includes(payload.event ?? '') || !payload.payload?.payment?.entity?.order_id) {
+      return { success: true, duplicate: false };
+    }
+    const duplicate = !(await this.orderService.processPaymentEvent(
+      eventId,
+      payload.payload.payment.entity.order_id,
+      payload.event,
+    ));
+    return { success: true, duplicate };
+  }
 
   /**
    * GET /api/orders
