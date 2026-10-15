@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
-import { getCurrentUser } from "../services/auth";
+import { getCurrentUser, logout } from "../services/auth";
 import { getOrders, type Order } from "../services/orders";
 import {
   createAddress,
@@ -217,7 +217,12 @@ const OrdersPage = () => {
           <button
             className={styles.sidebarLink}
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              try {
+                await logout();
+              } catch {
+                // Clear the local session even when the server is unavailable.
+              }
               localStorage.removeItem("access_token");
               localStorage.removeItem("refresh_token");
               navigate("/");

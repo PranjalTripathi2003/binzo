@@ -4,10 +4,12 @@ import OrdersPage from "./pages/OrdersPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import AdminPage from "./pages/AdminPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
+import GoogleAuthCallbackPage from "./pages/GoogleAuthCallbackPage";
 
 function App() {
   return (
     <Routes>
+      <Route path="/auth/callback" element={<GoogleAuthCallbackPage />} />
       <Route path="/" element={<HomePage />} />
       <Route path="/orders/:section?" element={<OrdersPage />} />
       <Route path="/product/:id" element={<ProductDetailsPage />} />

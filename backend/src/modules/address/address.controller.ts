@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 
@@ -12,7 +12,7 @@ type AuthenticatedRequest = { user: { userId: string } };
  * addresses are always scoped to the logged-in user; clients never need to
  * supply a userId in the request body.
  */
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseAuthGuard)
 @Controller('addresses')
 export class AddressController {
   constructor(private readonly addressService: AddressService) {}

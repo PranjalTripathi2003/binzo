@@ -10,7 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 
 /**
  * HTTP layer for authentication routes under /api/auth.
@@ -25,7 +25,7 @@ export class AuthController {
   /**
    * POST /api/auth/register
    *
-   * Creates a user row and refresh-token row through AuthService.
+   * Creates an auth.users account; a database trigger creates its profile row.
    */
   @Post('register')
   async register(@Body() dto: RegisterDto) {
@@ -41,7 +41,7 @@ export class AuthController {
   /**
    * POST /api/auth/login
    *
-   * Verifies credentials and returns access/refresh tokens.
+   * Verifies credentials with Supabase Auth and returns its session.
    */
   @HttpCode(200)
   @Post('login')
@@ -58,13 +58,11 @@ export class AuthController {
   /**
    * GET /api/auth/me
    *
-   * Returns the user identity decoded by JwtStrategy; no database read happens
-   * here yet.
+   * Returns the public profile for the verified Supabase Auth identity.
    */
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseAuthGuard)
   @Get('me')
-  async me(@Req() req: any) {
-    // Fetch full profile from DB so the frontend gets name, phone, etc.
+  async me(@Req() req: { user: { userId: string } }) {
     const user = await this.authService.getMe(req.user.userId);
     return { success: true, data: user };
   }
@@ -72,7 +70,7 @@ export class AuthController {
   /**
    * POST /api/auth/refresh
    *
-   * Verifies the refresh token and rotates it, returning a new access/refresh pair.
+   * Rotates a Supabase Auth refresh token and returns the new session.
    */
   @Post('refresh')
   async refresh(@Body('refresh_token') refresh_token: string) {
@@ -83,14 +81,12 @@ export class AuthController {
   /**
    * POST /api/auth/logout
    *
-   * Deletes refresh token rows for the logged-in user.
+   * Revokes the current Supabase Auth session.
    */
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(SupabaseAuthGuard)
   @Post('logout')
-  async logout(@Req() req: any) {
-    // TODO: clear stored refresh token
-    const userId = req.user?.userId;
-    const result = await this.authService.logout(userId);
+  async logout(@Req() req: { supabaseAccessToken: string }) {
+    const result = await this.authService.logout(req.supabaseAccessToken);
     return { success: true, data: result };
   }
 }

@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseService } from './supabase.service';
+import { SupabaseAuthGuard } from './supabase-auth.guard';
 
 /**
  * Makes the Supabase database client injectable across every feature module.
@@ -12,7 +13,7 @@ import { SupabaseService } from './supabase.service';
 @Global()
 @Module({
   imports: [ConfigModule],
-  providers: [SupabaseService],
-  exports: [SupabaseService],
+  providers: [SupabaseService, SupabaseAuthGuard],
+  exports: [SupabaseService, SupabaseAuthGuard],
 })
 export class SupabaseModule {}

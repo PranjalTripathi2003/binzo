@@ -378,6 +378,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
       await logout();
     } finally {
       localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
       setUser(null);
       setIsAccountOpen(false);
     }

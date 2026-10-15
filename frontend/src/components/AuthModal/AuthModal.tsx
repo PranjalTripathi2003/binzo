@@ -3,6 +3,7 @@ import {
   getCurrentUser,
   login,
   register,
+  signInWithGoogle,
   type AuthUser,
 } from "../../services/auth";
 import styles from "./AuthModal.module.css";
@@ -30,6 +31,7 @@ const AuthModal = ({ mode, onClose, onAuthSuccess }: AuthModalProps) => {
   const [regPassword, setRegPassword] = useState("");
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
+  const [googleError, setGoogleError] = useState('');
 
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -54,13 +56,28 @@ const AuthModal = ({ mode, onClose, onAuthSuccess }: AuthModalProps) => {
     if (e.target === overlayRef.current) onClose();
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleError('');
+    try {
+      await signInWithGoogle();
+    } catch (reason) {
+      setGoogleError(
+        reason instanceof Error ? reason.message : 'Google sign-in could not be started.',
+      );
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
     setLoginLoading(true);
     try {
       const result = await login({ email: loginEmail, password: loginPassword });
+      if (!result.access_token || !result.refresh_token) {
+        throw new Error("Supabase Auth did not return a session.");
+      }
       localStorage.setItem("access_token", result.access_token);
+      localStorage.setItem("refresh_token", result.refresh_token);
       const currentUser = await getCurrentUser();
       onAuthSuccess(currentUser);
       onClose();
@@ -80,8 +97,14 @@ const AuthModal = ({ mode, onClose, onAuthSuccess }: AuthModalProps) => {
         name: regName,
         email: regEmail,
         password: regPassword,
+        phone: regPhone,
       });
+      if (!result.access_token || !result.refresh_token) {
+        setRegError("Account created. Check your email to confirm it, then log in.");
+        return;
+      }
       localStorage.setItem("access_token", result.access_token);
+      localStorage.setItem("refresh_token", result.refresh_token);
       const currentUser = await getCurrentUser();
       onAuthSuccess(currentUser);
       onClose();
@@ -121,6 +144,17 @@ const AuthModal = ({ mode, onClose, onAuthSuccess }: AuthModalProps) => {
         {view === "login" ? (
           <form className={styles.form} onSubmit={handleLogin} noValidate>
             <h2 className={styles.heading}>Login to your Binzo account</h2>
+
+            <button
+              className={styles.googleButton}
+              type="button"
+              onClick={handleGoogleSignIn}
+            >
+              <i className="fa-brands fa-google" aria-hidden="true" />
+              Continue with Google
+            </button>
+            {googleError && <p className={styles.errorMsg} role="alert">{googleError}</p>}
+            <div className={styles.divider}><span>or continue with email</span></div>
 
             <div className={styles.fieldGroup}>
               <input
@@ -178,6 +212,17 @@ const AuthModal = ({ mode, onClose, onAuthSuccess }: AuthModalProps) => {
         ) : (
           <form className={styles.form} onSubmit={handleRegister} noValidate>
             <h2 className={styles.heading}>Register for&nbsp;Binzo account</h2>
+
+            <button
+              className={styles.googleButton}
+              type="button"
+              onClick={handleGoogleSignIn}
+            >
+              <i className="fa-brands fa-google" aria-hidden="true" />
+              Continue with Google
+            </button>
+            {googleError && <p className={styles.errorMsg} role="alert">{googleError}</p>}
+            <div className={styles.divider}><span>or create with email</span></div>
 
             <div className={styles.fieldGroup}>
               <input

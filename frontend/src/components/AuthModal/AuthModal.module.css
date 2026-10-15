@@ -155,6 +155,46 @@
   margin-bottom: 1.25rem;
 }
 
+.googleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #000000;
+  font: 600 0.95rem/1 inherit;
+  cursor: pointer;
+}
+
+.googleButton:hover {
+  background: #f8fafc;
+}
+
+.googleButton i {
+  color: #4285f4;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  flex: 1;
+  background: #e2e8f0;
+  content: "";
+}
+
 .submitButton:hover:not(:disabled) {
   background: #4338ca;
   transform: translateY(-1px);

@@ -11,7 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -72,7 +72,7 @@ export class ProductController {
    * Creates a product row and its product_variants rows.
    * Tables touched: products, product_variants.
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Post()
   async create(@Body() createProductDto: CreateProductDto) {
@@ -91,7 +91,7 @@ export class ProductController {
    * Updates product metadata and optional variants in one edit flow.
    * Tables touched: products, product_variants.
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
@@ -110,7 +110,7 @@ export class ProductController {
    * Deletes a product. Product variants are removed by database cascade.
    * Tables touched: products (cascade: product_variants).
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')
   async remove(@Param('id') id: string) {
@@ -131,7 +131,7 @@ export class ProductController {
    *
    * The returned url can be saved into product_variants.image_url.
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file'))

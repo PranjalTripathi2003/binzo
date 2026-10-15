@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { supabasePublishableKey, supabaseUrl } from "../config/supabase";
 
 /**
  * Learning task: connect Navbar auth UI to the backend.
@@ -22,15 +23,16 @@ export type AuthUser = {
 };
 
 export type AuthResponse = {
-  user: AuthUser;
-  access_token: string;
-  refresh_token: string;
+  user: AuthUser | null;
+  access_token: string | null;
+  refresh_token: string | null;
 };
 
 export type RegisterInput = {
   email: string;
   password: string;
   name?: string;
+  phone?: string;
 };
 
 export type LoginInput = {
@@ -38,14 +40,41 @@ export type LoginInput = {
   password: string;
 };
 
+/** Starts a PKCE Google OAuth flow through Supabase Auth. */
+export async function signInWithGoogle(): Promise<void> {
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error('Google sign-in is not configured for this frontend.');
+  }
+
+  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+  const verifier = toBase64Url(randomBytes);
+  const challengeBytes = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(verifier),
+  );
+  const challenge = toBase64Url(new Uint8Array(challengeBytes));
+  const redirectTo = `${window.location.origin}/auth/callback`;
+
+  sessionStorage.setItem('supabase_oauth_code_verifier', verifier);
+
+  const authorizeUrl = new URL(`${supabaseUrl}/auth/v1/authorize`);
+  authorizeUrl.searchParams.set('provider', 'google');
+  authorizeUrl.searchParams.set('redirect_to', redirectTo);
+  authorizeUrl.searchParams.set('code_challenge', challenge);
+  authorizeUrl.searchParams.set('code_challenge_method', 's256');
+  window.location.assign(authorizeUrl.toString());
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
 /**
- * TODO: Call this from Navbar when the user submits a register form.
- *
- * Steps:
- * 1. Send name/email/password to POST /auth/register.
- * 2. Store result.access_token in localStorage using key "access_token".
- * 3. Store result.refresh_token if you want to build refresh/logout later.
- * 4. Update Navbar UI to show the logged-in user's name/email.
+ * Creates a Supabase Auth account through the backend.
  */
 export async function register(input: RegisterInput): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/auth/register", {
@@ -55,13 +84,7 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 }
 
 /**
- * TODO: Call this from Navbar when the user submits a login form.
- *
- * Steps:
- * 1. Send email/password to POST /auth/login.
- * 2. Store result.access_token in localStorage using key "access_token".
- * 3. Call getCurrentUser() to confirm the token works.
- * 4. Replace the placeholder "Username" text in Navbar with real user data.
+ * Signs in through Supabase Auth via the backend.
  */
 export async function login(input: LoginInput): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/auth/login", {
@@ -71,20 +94,14 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 }
 
 /**
- * TODO: Call this after login/register and when the app first loads.
- *
- * Because apiFetch reads localStorage.access_token, this request should include
- * the Bearer token automatically.
+ * Loads the profile associated with the active Supabase Auth token.
  */
 export async function getCurrentUser(): Promise<AuthUser> {
   return apiFetch<AuthUser>("/auth/me");
 }
 
 /**
- * TODO: Call this from the Navbar logout button.
- *
- * After the backend responds, remove access_token from localStorage and reset
- * the Navbar account UI back to logged-out state.
+ * Revokes the active Supabase Auth session.
  */
 export async function logout(): Promise<{ message: string }> {
   return apiFetch<{ message: string }>("/auth/logout", {

@@ -11,7 +11,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderService } from './order.service';
@@ -30,7 +30,7 @@ type AuthenticatedRequest = {
  * All routes require a JWT and pass req.user.userId into OrderService so every
  * database operation is scoped to the logged-in user.
  */
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseAuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(

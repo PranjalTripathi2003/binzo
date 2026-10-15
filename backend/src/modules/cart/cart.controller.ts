@@ -9,7 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -20,7 +20,7 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
  * All routes require a JWT. The decoded userId scopes every cart database query
  * so one user cannot read or edit another user's cart_items rows.
  */
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(SupabaseAuthGuard)
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}

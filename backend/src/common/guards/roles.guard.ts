@@ -14,12 +14,12 @@ import { SupabaseService } from '../../modules/supabase/supabase.service';
  *
  * Flow:
  * 1. Reads required roles from the @Roles() decorator metadata.
- * 2. Reads req.user (populated by JwtStrategy) to get the userId.
+ * 2. Reads req.user (populated by SupabaseAuthGuard) to get the userId.
  * 3. Fetches the user's role column from public.users in Supabase.
  * 4. Throws 403 if the role does not match.
  *
- * Must be used together with @UseGuards(AuthGuard('jwt'), RolesGuard)
- * so that JwtStrategy runs first and populates req.user.
+ * Must be used together with @UseGuards(SupabaseAuthGuard, RolesGuard) so the
+ * verified Supabase identity is available before the role lookup.
  */
 @Injectable()
 export class RolesGuard implements CanActivate {

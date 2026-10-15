@@ -47,8 +47,7 @@
 - **Order History & Invoices**: Detailed order receipts, status timelines, payment details, and breakdown summaries.
 
 ### 🛡️ Authentication & Security
-- **JWT Authentication**: Access and Refresh Token rotation mechanism with Passport JWT strategies.
-- **Secure Password Hashing**: Salted hashing via `bcryptjs`.
+- **Supabase Auth**: Email/password authentication, managed access and refresh tokens, and verified sessions.
 - **Role-Based Access Control**: Protected routes and admin privilege verification.
 
 ### 📊 Admin Operations Dashboard (`/admin`)
@@ -100,7 +99,7 @@ graph TD
 ### Backend
 - **Framework**: [NestJS 11](https://nestjs.com/) (TypeScript)
 - **Runtime**: [Node.js 22](https://nodejs.org/)
-- **Authentication**: Passport.js, `@nestjs/jwt`, `bcryptjs`
+- **Authentication**: Supabase Auth; NestJS verifies access tokens with Supabase Auth
 - **Validation**: `class-validator`, `class-transformer`
 - **Database Client**: `@supabase/supabase-js`
 
@@ -195,12 +194,6 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key
-JWT_REFRESH_SECRET=your-super-secret-refresh-jwt-key
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-
 # Razorpay (Optional for payment gateway testing)
 RAZORPAY_KEY_ID=your_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
@@ -214,9 +207,34 @@ VITE_API_BASE_URL=http://localhost:3000/api
 ```
 
 ### Database Setup
-1. Open your Supabase SQL Editor.
-2. Run the queries from [`schema.sql`](./schema.sql) to initialize tables, relationships, triggers, and RLS policies.
-3. Run [`local-public-data.sql`](./local-public-data.sql) to populate initial categories, products, and units.
+Use the Supabase CLI for local database work. Migrations in `supabase/migrations/` are the schema source of truth:
+
+```bash
+supabase start
+supabase db reset
+supabase status
+```
+
+`db reset` recreates the local database and applies every migration. The migration `20261015100000_switch_to_supabase_auth.sql` removes old custom-auth accounts and their cart, address, and order records, then links `public.users` profiles to `auth.users`. It keeps the catalog intact.
+
+The local Auth configuration has email confirmations disabled, so local sign-up returns a session. After creating the account you want to administer, promote its profile once in local Studio SQL Editor:
+
+```sql
+UPDATE public.users SET role = 'admin' WHERE email = 'your-email@example.com';
+```
+
+Hosted projects should use their own Supabase Auth email confirmation settings. The local reset does not push migrations to a hosted project.
+
+### Google OAuth Setup
+
+The auth modal starts a PKCE Google sign-in through Supabase Auth and returns to `/auth/callback`. To enable it locally:
+
+1. Create a **Web application** OAuth client in Google Cloud. Add `http://localhost:5173` as an authorized JavaScript origin and `http://127.0.0.1:50321/auth/v1/callback` as an authorized redirect URI.
+2. Put the Google client ID and secret in the ignored repo-root `.env` using the keys shown in [`.env.example`](./.env.example).
+3. Set `enabled = true` in `[auth.external.google]` in `supabase/config.toml`, then restart the local Supabase stack with `supabase stop` and `supabase start`.
+4. Confirm `frontend/.env.local` has the local Supabase URL and publishable key, then restart Vite.
+
+For the hosted project, enable Google in Supabase Dashboard → Authentication → Providers and add that project's Supabase Auth callback URL to the Google OAuth client's authorized redirect URIs. Add the production app callback to Supabase's allowed redirect URLs too. Local provider settings and credentials are separate from the hosted project's configuration.
 
 ### Installation & Running Locally
 
@@ -244,8 +262,9 @@ npm run dev
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Register a new user | No |
-| `POST` | `/api/auth/login` | Log in and obtain JWT access/refresh tokens | No |
-| `POST` | `/api/auth/refresh` | Refresh an expired access token | No |
+| `POST` | `/api/auth/login` | Log in and obtain a Supabase Auth session | No |
+| `POST` | `/api/auth/refresh` | Refresh a Supabase Auth session | No |
+| `POST` | `/api/auth/logout` | Revoke the current Supabase Auth session | Yes |
 | `GET` | `/api/category` | Fetch all grocery categories | No |
 | `GET` | `/api/product` | Fetch product catalog with filtering & units | No |
 | `GET` | `/api/product/:id` | Fetch specific product details and units | No |

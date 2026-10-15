@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { SupabaseAuthGuard } from '../supabase/supabase-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CategoryService } from './category.service';
@@ -63,7 +63,7 @@ export class CategoryController {
    * Inserts a new category row. The slug must be unique.
    * Tables touched: categories.
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Post()
   async create(@Body() createCategoryDto: CreateCategoryDto) {
@@ -82,7 +82,7 @@ export class CategoryController {
    * Updates editable category fields after verifying the category exists.
    * Tables touched: categories.
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id')
   async update(
@@ -104,7 +104,7 @@ export class CategoryController {
    * Deletes a category. Database cascade rules delete its products too.
    * Tables touched: categories (cascade: products, product_variants).
    */
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')
   async remove(@Param('id') id: string) {
