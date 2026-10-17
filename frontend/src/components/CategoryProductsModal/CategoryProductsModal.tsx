@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Category } from "../../services/catalog";
-import { getProducts } from "../../services/catalog";
-import type { Product } from "../../data/products";
+import { useProductsQuery } from "../../services/catalog";
 import ProductCard from "../ProductCard/ProductCard";
 import styles from "./CategoryProductsModal.module.css";
 
@@ -16,9 +15,7 @@ const CategoryProductsModal = ({
 }: CategoryProductsModalProps) => {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const productsQuery = useProductsQuery(category.id);
 
   useEffect(() => {
     previousFocusRef.current =
@@ -34,26 +31,14 @@ const CategoryProductsModal = ({
     };
     window.addEventListener("keydown", handleKeyDown);
 
-    let isMounted = true;
-    getProducts(category.id)
-      .then((loadedProducts) => {
-        if (isMounted) setProducts(loadedProducts);
-      })
-      .catch((loadError: unknown) => {
-        console.error(loadError);
-        if (isMounted) setError("Products could not be loaded. Please try again.");
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
     return () => {
-      isMounted = false;
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
-  }, [category.id, onClose]);
+  }, [onClose]);
+
+  const products = productsQuery.data ?? [];
 
   return (
     <div
@@ -85,11 +70,11 @@ const CategoryProductsModal = ({
         </header>
 
         <div className={styles.content}>
-          {isLoading ? (
+          {productsQuery.isPending ? (
             <p className={styles.message}>Loading products…</p>
-          ) : error ? (
+          ) : productsQuery.isError ? (
             <p className={styles.message} role="alert">
-              {error}
+              Products could not be loaded. Please try again.
             </p>
           ) : products.length === 0 ? (
             <p className={styles.message}>No products in this category yet.</p>

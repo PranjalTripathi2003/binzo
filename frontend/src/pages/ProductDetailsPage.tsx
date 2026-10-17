@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { useCart } from "../context/CartContext";
-import { getProductById, type Product } from "../data/products";
-import { getProduct } from "../services/catalog";
+import { getProductById } from "../data/products";
+import { useProductQuery } from "../services/catalog";
 import styles from "./ProductDetailsPage.module.css";
 
 const ProductDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const fallbackProduct = id ? getProductById(id) : undefined;
-  const [product, setProduct] = useState<Product | undefined>(fallbackProduct);
-  const [isLoading, setIsLoading] = useState(Boolean(id && !fallbackProduct));
+  const productQuery = useProductQuery(id ?? "");
+  const product = productQuery.data ?? (productQuery.isError ? fallbackProduct : undefined);
 
   const [selectedUnitId, setSelectedUnitId] = useState(
     fallbackProduct?.units[0]?.id ?? "",
@@ -19,43 +19,12 @@ const ProductDetailsPage = () => {
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
   const { addToCart, getVariantQuantity, setVariantQuantity } = useCart();
 
-  const selectProduct = (nextProduct: Product | undefined) => {
-    setProduct(nextProduct);
-    setSelectedUnitId(nextProduct?.units[0]?.id ?? "");
-    setSelectedImageIndex(0);
-  };
-
   useEffect(() => {
-    if (!id) {
-      return;
-    }
+    setSelectedUnitId(product?.units[0]?.id ?? "");
+    setSelectedImageIndex(0);
+  }, [product]);
 
-    let isMounted = true;
-
-    getProduct(id)
-      .then((loadedProduct) => {
-        if (isMounted) {
-          selectProduct(loadedProduct);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        if (isMounted) {
-          selectProduct(fallbackProduct);
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [fallbackProduct, id]);
-
-  if (isLoading) {
+  if (productQuery.isPending) {
     return (
       <>
         <Navbar />

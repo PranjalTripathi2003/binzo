@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Hero from "../components/Hero/Hero";
@@ -9,7 +10,12 @@ import CategoryBrowser from "../components/CategoryBrowser/CategoryBrowser";
 import ProductSection from "../components/ProductSection/ProductSection";
 import CategoryProductsModal from "../components/CategoryProductsModal/CategoryProductsModal";
 import { products as mockProducts } from "../data/products";
-import { getCategories, getProducts, type Category } from "../services/catalog";
+import {
+  getProducts,
+  useCategoriesQuery,
+  useProductsQuery,
+  type Category,
+} from "../services/catalog";
 import styles from "./HomePage.module.css";
 
 const fallbackCategories: Category[] = [
@@ -56,17 +62,32 @@ const homepageCategoryTitles = new Set(
 );
 
 const HomePage = () => {
-  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
-  const [products, setProducts] = useState<typeof mockProducts>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
   const [selectedCategoryId, setSelectedCategoryId] = useState("snacks");
   const [selectedCategoryTitle, setSelectedCategoryTitle] =
     useState("Snacks & Munchies");
   const [showCategoryBrowser, setShowCategoryBrowser] = useState(false);
   const [modalCategory, setModalCategory] = useState<Category | null>(null);
   const location = useLocation();
+  const categoriesQuery = useCategoriesQuery();
+  const productsQuery = useProductsQuery();
+  const categoryProductsQuery = useQuery({
+    queryKey: ["catalog", "products", { categoryId: selectedCategoryId }],
+    queryFn: () => getProducts(selectedCategoryId),
+    enabled: showCategoryBrowser,
+  });
+  const categories = categoriesQuery.data?.length
+    ? categoriesQuery.data
+    : fallbackCategories;
+  const products = productsQuery.data?.length
+    ? productsQuery.data
+    : productsQuery.isError
+      ? mockProducts
+      : [];
+  const status = productsQuery.isPending
+    ? "loading"
+    : productsQuery.isError
+      ? "error"
+      : "ready";
   const closeCategoryModal = useCallback(() => setModalCategory(null), []);
   const openCategoryModal = (categoryTitle: string) => {
     const category = categories.find((item) => item.title === categoryTitle);
@@ -74,64 +95,13 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    if (location.pathname === "/") {
-      setShowCategoryBrowser(false);
-    }
-    let isMounted = true;
+    if (location.pathname === "/") setShowCategoryBrowser(false);
+  }, [location.pathname]);
 
-    async function loadCatalog() {
-      try {
-        const [loadedCategories, loadedProducts] = await Promise.all([
-          getCategories(),
-          getProducts(),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        const resolvedCategories =
-          loadedCategories.length > 0 ? loadedCategories : fallbackCategories;
-        setCategories(resolvedCategories);
-        setStatus("ready");
-
-        if (loadedProducts.length > 0) {
-          setProducts(loadedProducts);
-        } else {
-          setProducts(mockProducts);
-        }
-      } catch (error) {
-        console.error(error);
-        if (isMounted) {
-          setCategories(fallbackCategories);
-          setProducts(mockProducts);
-          setStatus("error");
-        }
-      }
-    }
-
-    loadCatalog();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const loadCategoryProducts = async (categoryId: string, title: string) => {
+  const loadCategoryProducts = (categoryId: string, title: string) => {
     setSelectedCategoryId(categoryId);
     setSelectedCategoryTitle(title);
     setShowCategoryBrowser(true);
-
-    try {
-      setStatus("loading");
-      const filteredProducts = await getProducts(categoryId);
-      setProducts(filteredProducts);
-      setStatus("ready");
-    } catch (error) {
-      console.error(error);
-      setProducts([]);
-      setStatus("error");
-    }
   };
 
   const handleShopNow = () => {
@@ -167,8 +137,8 @@ const HomePage = () => {
               setModalCategory(category);
             }
           }}
-          products={products}
-          isLoading={status === "loading"}
+          products={categoryProductsQuery.data ?? []}
+          isLoading={categoryProductsQuery.isPending}
         />
       ) : (
         <main className={styles.homeMain}>

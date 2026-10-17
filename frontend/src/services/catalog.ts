@@ -1,11 +1,42 @@
 import type { Product, ProductUnit } from "../data/products";
 import { apiFetch } from "./api";
+import { useQuery } from "@tanstack/react-query";
 
 export type Category = {
   id: string;
   title: string;
   image: string;
 };
+
+export const catalogQueryKeys = {
+  all: ["catalog"] as const,
+  categories: () => [...catalogQueryKeys.all, "categories"] as const,
+  products: (categoryId?: string, search?: string) =>
+    [...catalogQueryKeys.all, "products", { categoryId, search }] as const,
+  product: (id: string) => [...catalogQueryKeys.all, "product", id] as const,
+};
+
+export function useCategoriesQuery() {
+  return useQuery({
+    queryKey: catalogQueryKeys.categories(),
+    queryFn: getCategories,
+  });
+}
+
+export function useProductsQuery(categoryId?: string, search?: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.products(categoryId, search),
+    queryFn: () => getProducts(categoryId, search),
+  });
+}
+
+export function useProductQuery(id: string) {
+  return useQuery({
+    queryKey: catalogQueryKeys.product(id),
+    queryFn: () => getProduct(id),
+    enabled: Boolean(id),
+  });
+}
 
 type CategoryDto = {
   id: string;
