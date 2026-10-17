@@ -162,7 +162,7 @@ const HomePage = () => {
           onCategorySelect={(id) => {
             const category = categories.find((cat) => cat.id === id);
             if (category) {
-              loadCategoryProducts(id, category.title);
+              setModalCategory(category);
             }
           }}
           products={products}
