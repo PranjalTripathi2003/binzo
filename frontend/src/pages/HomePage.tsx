@@ -57,7 +57,7 @@ const homepageCategoryTitles = new Set(
 
 const HomePage = () => {
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState<typeof mockProducts>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
   );
@@ -103,6 +103,8 @@ const HomePage = () => {
       } catch (error) {
         console.error(error);
         if (isMounted) {
+          setCategories(fallbackCategories);
+          setProducts(mockProducts);
           setStatus("error");
         }
       }
@@ -189,11 +191,13 @@ const HomePage = () => {
               if (category) setModalCategory(category);
             }}
           />
-          <ProductSection
-            products={products}
-            dairyCategoryId={dairyCategoryId}
-            snacksCategoryId={snacksCategoryId}
-          />
+          {status !== "loading" && (
+            <ProductSection
+              products={products}
+              dairyCategoryId={dairyCategoryId}
+              snacksCategoryId={snacksCategoryId}
+            />
+          )}
         </main>
       )}
       <Footer />
