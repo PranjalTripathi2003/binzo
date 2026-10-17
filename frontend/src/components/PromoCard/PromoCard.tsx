@@ -6,6 +6,7 @@ type PromoCardProps = {
   buttonText: string;
   backgroundColor: string;
   image?: string;
+  onClick: () => void;
 };
 
 const PromoCard = ({
@@ -14,13 +15,16 @@ const PromoCard = ({
   buttonText,
   backgroundColor,
   image,
+  onClick,
 }: PromoCardProps) => {
   return (
     <section className={styles.promoCard} style={{ backgroundColor }}>
       <div className={styles.left}>
         <h2>{title}</h2>
         <p>{description}</p>
-        <button>{buttonText}</button>
+        <button type="button" onClick={onClick}>
+          {buttonText}
+        </button>
       </div>
 
       {image && (

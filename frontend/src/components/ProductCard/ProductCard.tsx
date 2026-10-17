@@ -47,12 +47,6 @@ const ProductCard = ({
         src={image || "/images/milk.png"}
         alt={title}
         className={styles.image}
-        onError={(event) => {
-          const target = event.currentTarget as HTMLImageElement;
-          if (target.src !== "/images/milk.png") {
-            target.src = "/images/milk.png";
-          }
-        }}
       />
 
       <h3 className={styles.title}>{title}</h3>

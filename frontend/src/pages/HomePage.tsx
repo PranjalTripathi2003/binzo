@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import Hero from "../components/Hero/Hero";
@@ -7,6 +7,7 @@ import PromoSection from "../components/PromoSection/PromoSection";
 import CategoryGrid from "../components/CategoryGrid/CategoryGrid";
 import CategoryBrowser from "../components/CategoryBrowser/CategoryBrowser";
 import ProductSection from "../components/ProductSection/ProductSection";
+import CategoryProductsModal from "../components/CategoryProductsModal/CategoryProductsModal";
 import { products as mockProducts } from "../data/products";
 import { getCategories, getProducts, type Category } from "../services/catalog";
 import styles from "./HomePage.module.css";
@@ -50,6 +51,10 @@ const fallbackCategories: Category[] = [
   },
 ];
 
+const homepageCategoryTitles = new Set(
+  fallbackCategories.map((category) => category.title),
+);
+
 const HomePage = () => {
   const [categories, setCategories] = useState<Category[]>(fallbackCategories);
   const [products, setProducts] = useState(mockProducts);
@@ -60,7 +65,13 @@ const HomePage = () => {
   const [selectedCategoryTitle, setSelectedCategoryTitle] =
     useState("Snacks & Munchies");
   const [showCategoryBrowser, setShowCategoryBrowser] = useState(false);
+  const [modalCategory, setModalCategory] = useState<Category | null>(null);
   const location = useLocation();
+  const closeCategoryModal = useCallback(() => setModalCategory(null), []);
+  const openCategoryModal = (categoryTitle: string) => {
+    const category = categories.find((item) => item.title === categoryTitle);
+    if (category) setModalCategory(category);
+  };
 
   useEffect(() => {
     if (location.pathname === "/") {
@@ -160,7 +171,7 @@ const HomePage = () => {
       ) : (
         <main className={styles.homeMain}>
           <Hero onShopNow={handleShopNow} />
-          <PromoSection />
+          <PromoSection onOpenCategory={openCategoryModal} />
           {status === "loading" && (
             <p className={styles.catalogStatus}>Loading fresh picks...</p>
           )}
@@ -169,7 +180,15 @@ const HomePage = () => {
               Backend catalog is unavailable, showing sample products.
             </p>
           )}
-          <CategoryGrid categories={categories} />
+          <CategoryGrid
+            categories={categories.filter((category) =>
+              homepageCategoryTitles.has(category.title),
+            )}
+            onCategorySelect={(categoryId) => {
+              const category = categories.find((item) => item.id === categoryId);
+              if (category) setModalCategory(category);
+            }}
+          />
           <ProductSection
             products={products}
             dairyCategoryId={dairyCategoryId}
@@ -178,6 +197,13 @@ const HomePage = () => {
         </main>
       )}
       <Footer />
+      {modalCategory && (
+        <CategoryProductsModal
+          key={modalCategory.id}
+          category={modalCategory}
+          onClose={closeCategoryModal}
+        />
+      )}
     </>
   );
 };

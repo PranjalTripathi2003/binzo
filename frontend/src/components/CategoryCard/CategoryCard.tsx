@@ -3,6 +3,7 @@ import styles from "./CategoryCard.module.css";
 type CategoryCardProps = {
   image: string;
   title: string;
+  onClick: () => void;
 };
 
 const categoryIcons: Record<string, string> = {
@@ -16,11 +17,11 @@ const categoryIcons: Record<string, string> = {
   "Cleaning Essentials": "fa-soap",
 };
 
-const CategoryCard = ({ image, title }: CategoryCardProps) => {
+const CategoryCard = ({ image, title, onClick }: CategoryCardProps) => {
   const icon = categoryIcons[title] ?? "fa-basket-shopping";
 
   return (
-    <div className={styles.card}>
+    <button type="button" className={styles.card} onClick={onClick}>
       {image ? (
         <img src={image} alt={title} className={styles.image} />
       ) : (
@@ -30,7 +31,7 @@ const CategoryCard = ({ image, title }: CategoryCardProps) => {
       )}
 
       <h3 className={styles.title}>{title}</h3>
-    </div>
+    </button>
   );
 };
 

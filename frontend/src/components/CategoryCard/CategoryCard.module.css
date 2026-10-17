@@ -4,10 +4,27 @@
   align-items: center;
   justify-content: flex-start;
   padding: 1rem 0.85rem;
+  border: 0;
   border-radius: 8px;
   background-color: #eef2ff;
+  color: inherit;
+  font: inherit;
   width: 150px;
   height: 178px;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+}
+
+.card:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 3px;
 }
 
 .image {
