@@ -175,7 +175,7 @@ const HomePage = () => {
           <Hero onShopNow={handleShopNow} />
           <PromoSection onOpenCategory={openCategoryModal} />
           {status === "loading" && (
-            <p className={styles.catalogStatus}>Loading fresh picks...</p>
+            <p className={styles.catalogStatus}>Loading product catalog...</p>
           )}
           {status === "error" && (
             <p className={styles.catalogStatus}>
