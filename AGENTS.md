@@ -242,7 +242,7 @@ This section is for AI agents and contributors writing code in this repo. **Read
 2. **Follow existing conventions** — Naming, file layout, styling, and import style should match neighboring files.
 3. **Avoid over-engineering** — No premature libraries, helpers, or abstractions. Inline simple logic; extract only when reused or clearly complex.
 4. **Comments sparingly** — Code should be self-explanatory. Comment only non-obvious business logic.
-5. **Tests when meaningful** — Add tests when requested or when covering real behavior. Skip trivial assertions.
+5. **Add tests for new functionality** — Every new user-facing feature or meaningful behavior change must include relevant unit or integration tests in the same change. Cover the main success path and important edge cases or failure states; skip trivial assertions. Update existing tests when behavior changes.
 6. **Verify before finishing** — Run `npm run build` and `npm run lint` in `frontend/` after substantive changes.
 
 ### Frontend: File & Folder Layout
