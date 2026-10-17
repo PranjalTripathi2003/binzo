@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
-import { getOrder, cancelOrder, updateOrderStatus } from "../services/orders";
+import { cancelOrder, orderQueryKeys, updateOrderStatus, useOrderQuery } from "../services/orders";
 import { getOrderDeliveryTimeline } from "../utils/delivery";
 import styles from "./OrderDetailsPage.module.css";
 
@@ -40,9 +41,11 @@ const storeIcon = L.divIcon({
 const OrderDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const queryClient = useQueryClient();
+  const orderQuery = useOrderQuery(id ?? "");
+  const order = orderQuery.data;
+  const loading = orderQuery.isPending;
+  const error = orderQuery.isError;
 
   // Map coordinate state
   const [homeCoords, setHomeCoords] = useState<[number, number]>([28.6139, 77.209]); // default Noida/Delhi
@@ -76,18 +79,9 @@ const OrderDetailsPage = () => {
     }
   }, []);
 
-  // Fetch order details
-  const fetchOrder = useCallback(async (silent = false) => {
-    if (!id) return;
-    if (!silent) setLoading(true);
-    try {
-      const data = await getOrder(id);
-      setOrder(data);
-      if (!silent) setLoading(false);
-
-      // Geocode address
-      const fullAddr = (data as any).addresses?.address;
-      if (fullAddr && !silent) {
+  useEffect(() => {
+    const fullAddr = order?.addresses?.address;
+    if (fullAddr) {
         const geocode = async (query: string): Promise<boolean> => {
           try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
@@ -118,26 +112,8 @@ const OrderDetailsPage = () => {
           if (parts.length > 1) await geocode(parts.slice(-2).join(","));
         };
         tryGeocode();
-      }
-    } catch (err) {
-      console.error("Error loading order", err);
-      if (!silent) {
-        setError(true);
-        setLoading(false);
-      }
     }
-  }, [id]);
-
-  useEffect(() => {
-    fetchOrder();
-  }, [fetchOrder]);
-
-  // Poll for status updates every 30 seconds (silent refresh)
-  useEffect(() => {
-    if (!id) return;
-    const pollInterval = setInterval(() => fetchOrder(true), 30_000);
-    return () => clearInterval(pollInterval);
-  }, [id, fetchOrder]);
+  }, [order?.addresses?.address]);
 
   // Keep the countdown moving without resetting delivery progress on refresh.
   useEffect(() => {
@@ -157,9 +133,11 @@ const OrderDetailsPage = () => {
 
     if (!shouldPersist) return;
 
-    setOrder((prev: any) => (prev ? { ...prev, status: nextStatus } : prev));
-    updateOrderStatus(id, nextStatus).catch(console.error);
-  }, [order, now, loading, error, id]);
+    queryClient.setQueryData(orderQueryKeys.detail(id), (current: typeof order) => current ? { ...current, status: nextStatus } : current);
+    updateOrderStatus(id, nextStatus)
+      .then(() => queryClient.invalidateQueries({ queryKey: orderQueryKeys.lists() }))
+      .catch(console.error);
+  }, [order, now, loading, error, id, queryClient]);
 
   // Move the delivery marker along the route according to elapsed order time.
   useEffect(() => {
@@ -216,7 +194,8 @@ const OrderDetailsPage = () => {
     setCancelError(null);
     try {
       await cancelOrder(id);
-      setOrder((prev: any) => prev ? { ...prev, status: "cancelled" } : prev);
+      queryClient.setQueryData(orderQueryKeys.detail(id), (current: typeof order) => current ? { ...current, status: "cancelled" } : current);
+      await queryClient.invalidateQueries({ queryKey: orderQueryKeys.lists() });
       setShowCancelConfirm(false);
     } catch (err: any) {
       setCancelError(err?.message ?? "Failed to cancel order. Please try again.");

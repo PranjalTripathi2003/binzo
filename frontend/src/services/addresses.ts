@@ -1,4 +1,11 @@
 import { apiFetch } from './api';
+import { useQuery } from '@tanstack/react-query';
+
+export const addressQueryKeys = { all: ['addresses'] as const, list: () => [...addressQueryKeys.all, 'list'] as const };
+
+export function useAddressesQuery(enabled = true) {
+  return useQuery({ queryKey: addressQueryKeys.list(), queryFn: getAddresses, enabled });
+}
 
 /** A saved delivery address as returned by the backend. */
 export type Address = {

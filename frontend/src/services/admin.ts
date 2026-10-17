@@ -1,4 +1,19 @@
 import { API_BASE_URL, apiFetch, refreshAccessToken } from "./api";
+import { useQuery } from "@tanstack/react-query";
+
+export const adminQueryKeys = {
+  all: ['admin'] as const,
+  categories: () => [...adminQueryKeys.all, 'categories'] as const,
+  products: (categoryId?: string) => [...adminQueryKeys.all, 'products', { categoryId }] as const,
+};
+
+export function useAdminCategoriesQuery(enabled = true) {
+  return useQuery({ queryKey: adminQueryKeys.categories(), queryFn: getCategories, enabled });
+}
+
+export function useAdminProductsQuery(enabled = true) {
+  return useQuery({ queryKey: adminQueryKeys.products(), queryFn: () => getProducts(), enabled });
+}
 
 // ────────────────────────────────────────────────────────────
 // Types

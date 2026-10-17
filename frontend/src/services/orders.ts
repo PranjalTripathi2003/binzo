@@ -1,4 +1,19 @@
 import { apiFetch } from "./api";
+import { useQuery } from "@tanstack/react-query";
+
+export const orderQueryKeys = {
+  all: ["orders"] as const,
+  lists: () => [...orderQueryKeys.all, "list"] as const,
+  detail: (id: string) => [...orderQueryKeys.all, "detail", id] as const,
+};
+
+export function useOrdersQuery(enabled = true) {
+  return useQuery({ queryKey: orderQueryKeys.lists(), queryFn: getOrders, enabled });
+}
+
+export function useOrderQuery(id: string) {
+  return useQuery({ queryKey: orderQueryKeys.detail(id), queryFn: () => getOrder(id), enabled: Boolean(id), refetchInterval: 30_000 });
+}
 
 /**
  * Learning task: connect OrdersPage and checkout.

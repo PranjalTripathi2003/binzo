@@ -1,4 +1,11 @@
 import { apiFetch } from "./api";
+import { useQuery } from "@tanstack/react-query";
+
+export const cartQueryKeys = { all: ['cart'] as const, current: () => [...cartQueryKeys.all, 'current'] as const };
+
+export function useCartQuery(enabled = true) {
+  return useQuery({ queryKey: cartQueryKeys.current(), queryFn: getCart, enabled });
+}
 
 /**
  * Learning task: connect product cards and the Navbar cart overlay.

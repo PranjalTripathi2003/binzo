@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { getCurrentUser, type AuthUser } from "../services/auth";
 import {
   createCategory,
   createProduct,
   deleteCategory,
   deleteProduct,
-  getCategories,
-  getProducts,
+  adminQueryKeys,
+  useAdminCategoriesQuery,
+  useAdminProductsQuery,
   updateProduct,
   uploadProductImage,
-  type Category,
   type CreateProductVariantInput,
   type Product,
   type UpdateProductVariantInput,
@@ -56,6 +57,7 @@ const productImageDraftFromUrl = (imageUrl: string): ProductImageDraft => ({
 // ─────────────────────────────────────────────
 const AdminPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Auth & role gate
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -65,9 +67,15 @@ const AdminPage = () => {
   const [view, setView] = useState<AdminView>("dashboard");
 
   // Data
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const categoriesQuery = useAdminCategoriesQuery(
+    authChecked && (view === "categories" || view === "dashboard"),
+  );
+  const productsQuery = useAdminProductsQuery(
+    authChecked && ["products", "addProduct", "editProduct", "dashboard"].includes(view),
+  );
+  const categories = categoriesQuery.data ?? [];
+  const products = productsQuery.data ?? [];
+  const loading = categoriesQuery.isPending || productsQuery.isPending;
   const [error, setError] = useState("");
   const [productSearch, setProductSearch] = useState("");
 
@@ -95,61 +103,14 @@ const AdminPage = () => {
       return;
     }
     getCurrentUser()
-      .then(async (currentUser) => {
+      .then((currentUser) => {
         setUser(currentUser);
-        // The /me endpoint currently doesn't return role; fetch separately
-        // by attempting a categories admin call. Instead, we keep a simple
-        // role field if it's returned, otherwise trust the guard on the API.
-        // For the frontend gate, we try a lightweight admin-only call.
-        try {
-          await getCategories(); // public — just to confirm connectivity
-        } catch {
-          // ignore — API will enforce admin role
-        }
         setAuthChecked(true);
       })
       .catch(() => {
         navigate("/");
       });
   }, [navigate]);
-
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      const data = await getCategories();
-      setCategories(data);
-    } catch {
-      setError("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await getProducts();
-      setProducts(data);
-    } catch {
-      setError("Failed to load products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── Load data when view changes ──────────────────────────
-  useEffect(() => {
-    if (!authChecked) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (view === "categories" || view === "dashboard") loadCategories();
-    if (
-      view === "products" ||
-      view === "addProduct" ||
-      view === "editProduct" ||
-      view === "dashboard"
-    )
-      loadProducts();
-  }, [view, authChecked]);
 
   // ── Category CRUD ────────────────────────────────────────
   const handleCreateCategory = async (e: React.FormEvent) => {
@@ -159,7 +120,8 @@ const AdminPage = () => {
     setCatError("");
     try {
       const cat = await createCategory({ name: catName.trim(), slug: catSlug.trim() });
-      setCategories((prev) => [...prev, cat]);
+      queryClient.setQueryData(adminQueryKeys.categories(), (previous: typeof categories | undefined) => [...(previous ?? []), cat]);
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
       setCatName("");
       setCatSlug("");
     } catch (err: unknown) {
@@ -173,8 +135,9 @@ const AdminPage = () => {
     if (!window.confirm(`Delete category "${name}" and all its products?`)) return;
     try {
       await deleteCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      setProducts((prev) => prev.filter((p) => p.category_id !== id));
+      queryClient.setQueryData(adminQueryKeys.categories(), categories.filter((category) => category.id !== id));
+      queryClient.setQueryData(adminQueryKeys.products(), products.filter((product) => product.category_id !== id));
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
     } catch {
       setError("Failed to delete category");
     }
@@ -277,7 +240,8 @@ const AdminPage = () => {
         variants: resolvedVariants,
       });
 
-      setProducts((prev) => [product, ...prev]);
+      queryClient.setQueryData(adminQueryKeys.products(), [product, ...products]);
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
       resetProductForm();
       setView("products");
     } catch (err: unknown) {
@@ -309,9 +273,8 @@ const AdminPage = () => {
         variants: resolvedVariants,
       });
 
-      setProducts((prev) =>
-        prev.map((current) => (current.id === product.id ? product : current)),
-      );
+      queryClient.setQueryData(adminQueryKeys.products(), products.map((current) => current.id === product.id ? product : current));
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
       resetProductForm();
       setView("products");
     } catch (err: unknown) {
@@ -325,7 +288,8 @@ const AdminPage = () => {
     if (!window.confirm(`Delete product "${name}"?`)) return;
     try {
       await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      queryClient.setQueryData(adminQueryKeys.products(), products.filter((product) => product.id !== id));
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
     } catch {
       setError("Failed to delete product");
     }

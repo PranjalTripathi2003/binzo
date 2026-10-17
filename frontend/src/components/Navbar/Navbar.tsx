@@ -1,18 +1,19 @@
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import styles from "./Navbar.module.css";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentUser, logout, type AuthUser } from "../../services/auth";
-import { getProducts } from "../../services/catalog";
-import type { Product } from "../../data/products";
+import { useProductsQuery } from "../../services/catalog";
 import AuthModal from "../AuthModal/AuthModal";
 import { useCart } from "../../context/CartContext";
 import {
-  getAddresses,
+  addressQueryKeys,
+  useAddressesQuery,
   createAddress,
   type Address,
 } from "../../services/addresses";
 import LocationMap from "./LocationMap";
-import { createOrder } from "../../services/orders";
+import { createOrder, orderQueryKeys } from "../../services/orders";
 import { getStoredDeliveryMinutes } from "../../utils/delivery";
 
 const loadRazorpayScript = () => {
@@ -39,16 +40,15 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [deliveryMinutes] = useState(getStoredDeliveryMinutes);
   const [locationLabel, setLocationLabel] = useState("Detecting location...");
   const [locationRequestId, setLocationRequestId] = useState(0);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const accountDropdownRef = useRef<HTMLDivElement>(null);
-  const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addressSelectorOpen, setAddressSelectorOpen] = useState(false);
 
@@ -78,6 +78,19 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
     setVariantQuantity,
     mergeLocalCart,
   } = useCart();
+  const addressesQuery = useAddressesQuery(isCartOpen && Boolean(user));
+  const addresses = addressesQuery.data ?? [];
+  const activeSelectedAddress = selectedAddress ?? addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
+  const normalizedSearch = debouncedSearchQuery.trim();
+  const searchQueryResult = useProductsQuery(
+    undefined,
+    normalizedSearch.length >= 2 ? normalizedSearch : undefined,
+    normalizedSearch.length >= 2,
+  );
+  const searchResults = normalizedSearch.length >= 2
+    ? (searchQueryResult.data ?? []).slice(0, 6)
+    : [];
+  const isSearchLoading = normalizedSearch.length >= 2 && searchQueryResult.isPending;
 
   useEffect(() => {
     document.body.style.overflow = isCartOpen ? "hidden" : "";
@@ -92,23 +105,6 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
       setIsCartOpen(false);
     }
   }, [isCartOpen, itemCount]);
-
-  // Fetch saved addresses when cart opens (authenticated users only)
-  useEffect(() => {
-    if (!isCartOpen || !user) return;
-    getAddresses()
-      .then((data) => {
-        setAddresses(data);
-        if (data.length > 0 && !selectedAddress) {
-          const def = data.find((a) => a.is_default) ?? data[0];
-          setSelectedAddress(def);
-        }
-      })
-      .catch(() => {
-        /* silently skip */
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCartOpen, user]);
 
   // Request user current location for map default coordinates
   useEffect(() => {
@@ -172,7 +168,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
         is_default: addresses.length === 0, // default if first address
       });
 
-      setAddresses((prev) => [...prev, created]);
+      await queryClient.invalidateQueries({ queryKey: addressQueryKeys.list() });
       setSelectedAddress(created);
       setShowMapModal(false);
 
@@ -195,7 +191,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
       setAuthModal("login");
       return;
     }
-    if (!selectedAddress) {
+    if (!activeSelectedAddress) {
       setFormError("Please select or add a delivery address.");
       setAddressSelectorOpen(true);
       return;
@@ -221,10 +217,11 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
         handler: async (_paymentResponse: any) => {
           try {
             const order = await createOrder({
-              address_id: selectedAddress.id,
+              address_id: activeSelectedAddress.id,
               delivery_eta_minutes: deliveryMinutes,
             });
             await refreshCart();
+            await queryClient.invalidateQueries({ queryKey: orderQueryKeys.lists() });
             setIsCartOpen(false);
             setFormSubmitting(false);
             navigate(`/order/${order.id}`);
@@ -295,26 +292,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
   }, []);
 
   useEffect(() => {
-    const query = searchQuery.trim();
-    if (query.length < 2) {
-      setSearchResults([]);
-      setIsSearchLoading(false);
-      return;
-    }
-
-    const handle = window.setTimeout(async () => {
-      setIsSearchLoading(true);
-      try {
-        const results = await getProducts(undefined, query);
-        setSearchResults(results.slice(0, 6));
-      } catch (error) {
-        console.error(error);
-        setSearchResults([]);
-      } finally {
-        setIsSearchLoading(false);
-      }
-    }, 250);
-
+    const handle = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
     return () => window.clearTimeout(handle);
   }, [searchQuery]);
 
@@ -462,7 +440,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                         className={styles.searchResultItem}
                         onClick={() => {
                           setSearchQuery("");
-                          setSearchResults([]);
+                          setDebouncedSearchQuery("");
                           setIsSearchOpen(false);
                           navigate(`/product/${product.id}`);
                         }}
@@ -748,8 +726,8 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                       </h2>
                       <p>
                         {user
-                          ? selectedAddress
-                            ? selectedAddress.address
+                          ? activeSelectedAddress
+                            ? activeSelectedAddress.address
                             : "No saved address — click to add"
                           : locationLabel}
                       </p>
@@ -839,7 +817,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                   <button
                     key={addr.id}
                     type="button"
-                    className={`${styles.savedAddressRow} ${selectedAddress?.id === addr.id ? styles.selectedSavedAddress : ""}`}
+                    className={`${styles.savedAddressRow} ${activeSelectedAddress?.id === addr.id ? styles.selectedSavedAddress : ""}`}
                     onClick={() => {
                       setSelectedAddress(addr);
                       setAddressSelectorOpen(false);
@@ -862,7 +840,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                       <h4>{addr.label}</h4>
                       <p>{addr.address}</p>
                     </div>
-                    {selectedAddress?.id === addr.id && (
+                    {activeSelectedAddress?.id === addr.id && (
                       <i
                         className="fa-solid fa-circle-check"
                         style={{

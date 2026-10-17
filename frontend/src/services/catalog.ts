@@ -23,10 +23,11 @@ export function useCategoriesQuery() {
   });
 }
 
-export function useProductsQuery(categoryId?: string, search?: string) {
+export function useProductsQuery(categoryId?: string, search?: string, enabled = true) {
   return useQuery({
     queryKey: catalogQueryKeys.products(categoryId, search),
     queryFn: () => getProducts(categoryId, search),
+    enabled,
   });
 }
 

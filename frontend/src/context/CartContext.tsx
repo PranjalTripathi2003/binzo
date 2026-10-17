@@ -10,8 +10,11 @@ import {
   getCart,
   removeCartItem,
   updateCartItemQuantity,
+  useCartQuery,
   type CartItem,
 } from "../services/cart";
+import { useQueryClient } from "@tanstack/react-query";
+import { cartQueryKeys } from "../services/cart";
 
 type CartContextValue = {
   /** Total number of items (sum of quantities) in the cart. */
@@ -90,7 +93,11 @@ const createLocalItem = (
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const queryClient = useQueryClient();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem("access_token")));
+  const [localItems, setLocalItems] = useState<CartItem[]>([]);
+  const cartQuery = useCartQuery(isAuthenticated);
+  const items = isAuthenticated ? cartQuery.data ?? localItems : localItems;
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = items.reduce((sum, item) => {
@@ -102,22 +109,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("access_token");
     if (!token) {
       const localItems = loadLocalCart();
-      setItems(localItems);
+      setIsAuthenticated(false);
+      setLocalItems(localItems);
       return;
     }
 
     try {
-      const nextItems = await getCart();
-      setItems(nextItems);
+      setIsAuthenticated(true);
+      await queryClient.invalidateQueries({ queryKey: cartQueryKeys.current() });
+      await queryClient.fetchQuery({
+        queryKey: cartQueryKeys.current(),
+        queryFn: getCart,
+      });
     } catch (error) {
       if (error instanceof Error && error.message === "unauthenticated") {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
       }
       const localItems = loadLocalCart();
-      setItems(localItems);
+      setIsAuthenticated(false);
+      setLocalItems(localItems);
     }
-  }, []);
+  }, [queryClient]);
 
   const mergeLocalCart = useCallback(async () => {
     const token = localStorage.getItem("access_token");
@@ -175,7 +188,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             )
           : [...items, createLocalItem(variantId, quantity, productDetails)];
 
-        setItems(nextItems);
+        setLocalItems(nextItems);
         saveLocalCart(nextItems);
         return;
       }
@@ -192,7 +205,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   : item,
               )
             : [...items, createLocalItem(variantId, quantity, productDetails!)];
-          setItems(nextItems);
+          setLocalItems(nextItems);
           saveLocalCart(nextItems);
           return;
         }
@@ -219,7 +232,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 item.variant_id === variantId ? { ...item, quantity } : item,
               );
 
-        setItems(nextItems);
+        setLocalItems(nextItems);
         saveLocalCart(nextItems);
         return;
       }
@@ -256,7 +269,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               : items.map((item) =>
                   item.variant_id === variantId ? { ...item, quantity } : item,
                 );
-          setItems(nextItems);
+          setLocalItems(nextItems);
           saveLocalCart(nextItems);
           return;
         }

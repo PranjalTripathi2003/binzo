@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { getCurrentUser, logout } from "../services/auth";
-import { getOrders, type Order } from "../services/orders";
+import { useOrdersQuery } from "../services/orders";
 import {
   createAddress,
   deleteAddress,
-  getAddresses,
-  type Address,
+  useAddressesQuery,
 } from "../services/addresses";
+import { addressQueryKeys } from "../services/addresses";
 import LocationMap from "../components/Navbar/LocationMap";
 import { getOrderDeliveryTimeline } from "../utils/delivery";
 import styles from "./OrdersPage.module.css";
@@ -17,11 +18,16 @@ const OrdersPage = () => {
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
   const view = section === "addresses" ? "addresses" : "orders";
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [addressError, setAddressError] = useState(false);
+  const queryClient = useQueryClient();
+  const authenticated = Boolean(localStorage.getItem("access_token"));
+  const [sessionReady, setSessionReady] = useState(false);
+  const ordersQuery = useOrdersQuery(sessionReady && authenticated && view === "orders");
+  const addressesQuery = useAddressesQuery(sessionReady && authenticated && view === "addresses");
+  const orders = ordersQuery.data ?? [];
+  const addresses = addressesQuery.data ?? [];
+  const isLoading = view === "orders" ? ordersQuery.isPending : addressesQuery.isPending;
+  const hasError = ordersQuery.isError;
+  const addressError = addressesQuery.isError;
 
   // Add address modal state
   const [showModal, setShowModal] = useState(false);
@@ -44,9 +50,7 @@ const OrdersPage = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadOrders = async () => {
+    const checkSession = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         navigate("/");
@@ -55,43 +59,15 @@ const OrdersPage = () => {
 
       try {
         await getCurrentUser();
+        setSessionReady(true);
       } catch {
         navigate("/");
         return;
       }
 
-      if (view === "orders") {
-        try {
-          const data = await getOrders();
-          if (!isMounted) return;
-          setOrders(data);
-        } catch (error) {
-          console.error(error);
-          if (!isMounted) return;
-          setHasError(true);
-        }
-      }
-
-      if (view === "addresses") {
-        try {
-          const data = await getAddresses();
-          if (!isMounted) return;
-          setAddresses(data);
-        } catch (error) {
-          console.error(error);
-          if (!isMounted) return;
-          setAddressError(true);
-        }
-      }
-
-      if (isMounted) setIsLoading(false);
     };
 
-    loadOrders();
-
-    return () => {
-      isMounted = false;
-    };
+    checkSession();
   }, [navigate, view]);
 
   // Geocode current position when map opens
@@ -142,7 +118,7 @@ const OrdersPage = () => {
     setDeletingId(id);
     try {
       await deleteAddress(id);
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
+      await queryClient.invalidateQueries({ queryKey: addressQueryKeys.list() });
     } catch {
       // keep the address in the list if deletion fails
     } finally {
@@ -174,12 +150,12 @@ const OrdersPage = () => {
         : formAddressLabelType;
 
     try {
-      const created = await createAddress({
+      await createAddress({
         label: labelName,
         address: completeAddressString,
         is_default: addresses.length === 0,
       });
-      setAddresses((prev) => [...prev, created]);
+      await queryClient.invalidateQueries({ queryKey: addressQueryKeys.list() });
       closeModal();
     } catch {
       setFormError("Failed to save address. Please try again.");

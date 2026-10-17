@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useCallback, useState } from "react";
 import Navbar from "../components/Navbar/Navbar";
 import Hero from "../components/Hero/Hero";
 import Footer from "../components/Footer/Footer";
@@ -11,7 +9,6 @@ import ProductSection from "../components/ProductSection/ProductSection";
 import CategoryProductsModal from "../components/CategoryProductsModal/CategoryProductsModal";
 import { products as mockProducts } from "../data/products";
 import {
-  getProducts,
   useCategoriesQuery,
   useProductsQuery,
   type Category,
@@ -67,14 +64,13 @@ const HomePage = () => {
     useState("Snacks & Munchies");
   const [showCategoryBrowser, setShowCategoryBrowser] = useState(false);
   const [modalCategory, setModalCategory] = useState<Category | null>(null);
-  const location = useLocation();
   const categoriesQuery = useCategoriesQuery();
   const productsQuery = useProductsQuery();
-  const categoryProductsQuery = useQuery({
-    queryKey: ["catalog", "products", { categoryId: selectedCategoryId }],
-    queryFn: () => getProducts(selectedCategoryId),
-    enabled: showCategoryBrowser,
-  });
+  const categoryProductsQuery = useProductsQuery(
+    selectedCategoryId,
+    undefined,
+    showCategoryBrowser,
+  );
   const categories = categoriesQuery.data?.length
     ? categoriesQuery.data
     : fallbackCategories;
@@ -93,10 +89,6 @@ const HomePage = () => {
     const category = categories.find((item) => item.title === categoryTitle);
     if (category) setModalCategory(category);
   };
-
-  useEffect(() => {
-    if (location.pathname === "/") setShowCategoryBrowser(false);
-  }, [location.pathname]);
 
   const loadCategoryProducts = (categoryId: string, title: string) => {
     setSelectedCategoryId(categoryId);

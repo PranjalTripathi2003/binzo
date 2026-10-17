@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { useCart } from "../context/CartContext";
@@ -18,11 +18,6 @@ const ProductDetailsPage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isUpdatingCart, setIsUpdatingCart] = useState(false);
   const { addToCart, getVariantQuantity, setVariantQuantity } = useCart();
-
-  useEffect(() => {
-    setSelectedUnitId(product?.units[0]?.id ?? "");
-    setSelectedImageIndex(0);
-  }, [product]);
 
   if (productQuery.isPending) {
     return (
@@ -49,9 +44,7 @@ const ProductDetailsPage = () => {
     );
   }
 
-  const selectedUnit =
-    product.units.find((unit) => unit.id === selectedUnitId) ??
-    product.units[0];
+  const selectedUnit = product.units.find((unit) => unit.id === selectedUnitId) ?? product.units[0];
   const unitImages = selectedUnit?.images ?? product.images;
   const galleryImages = Array.from(
     new Set(unitImages.filter((image) => Boolean(image))),
