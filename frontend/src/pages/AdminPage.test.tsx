@@ -75,6 +75,13 @@ describe('AdminPage integration', () => {
     expect(getCurrentUserMock).not.toHaveBeenCalled();
   });
 
+  it('sends authenticated non-admin users back to the store', async () => {
+    getCurrentUserMock.mockResolvedValue({ email: 'customer@example.com', role: 'customer' });
+    renderAdminPage();
+
+    expect(await screen.findByText('Store home')).toBeInTheDocument();
+  });
+
   it('loads dashboard data and filters products by search text', async () => {
     const user = userEvent.setup();
     renderAdminPage();

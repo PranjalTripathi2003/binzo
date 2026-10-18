@@ -104,6 +104,10 @@ const AdminPage = () => {
     }
     getCurrentUser()
       .then((currentUser) => {
+        if (currentUser.role !== "admin") {
+          navigate("/");
+          return;
+        }
         setUser(currentUser);
         setAuthChecked(true);
       })
