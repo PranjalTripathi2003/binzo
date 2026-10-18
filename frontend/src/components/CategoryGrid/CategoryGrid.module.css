@@ -16,8 +16,17 @@
 
 @media (max-width: 900px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(140px, 1fr));
-    gap: 1rem 1rem;
-    width: min(100% - 2rem, 340px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem 0.5rem;
+    width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem 0.45rem;
+    padding: 0 0.75rem;
   }
 }

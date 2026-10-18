@@ -7,6 +7,10 @@
   color: #000;
 }
 
+.mobileBrand {
+  display: none;
+}
+
 .main {
   display: flex;
   align-items: center;
@@ -116,23 +120,90 @@
 
 @media (max-width: 900px) {
   .footer {
-    padding: 2.5rem 1rem 1.5rem;
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .mobileBrand {
+    display: block;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .mobileBrand h2 {
+    color: #cbd0d8;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.12;
+  }
+
+  .mobileDivider {
+    margin: 1.5rem 0 1rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  .mobileBrand .logo {
+    font-size: 1.6rem;
+  }
+
+  .main {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .main,
-  .bottom,
-  .columns {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2rem;
+  .bottom {
+    display: none;
   }
 
   .logo {
     width: auto;
     text-align: left;
+    font-size: 3rem;
+  }
+
+  .columns {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.75rem;
+    width: 100%;
+  }
+
+  .column {
+    gap: 0.7rem;
+  }
+
+  .column h2 {
+    margin-bottom: 0.15rem;
+    font-size: 1.25rem;
+  }
+
+  .column a {
+    font-size: 1rem;
   }
 
   .bottom {
+    align-items: flex-start;
+    flex-direction: column;
     gap: 1.5rem;
+    padding-top: 1rem;
+  }
+
+  .copyright {
+    width: 100%;
+    padding-bottom: 0.25rem;
+  }
+
+  .downloadLabel {
+    margin-top: 0.25rem;
+  }
+
+  .storeButtons {
+    gap: 0.55rem;
+  }
+
+  .socials {
+    gap: 1rem;
   }
 }

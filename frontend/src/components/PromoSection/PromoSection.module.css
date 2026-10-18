@@ -12,3 +12,9 @@
     width: min(100% - 2rem, 640px);
   }
 }
+
+@media (max-width: 720px) {
+  .promoSection {
+    display: none;
+  }
+}

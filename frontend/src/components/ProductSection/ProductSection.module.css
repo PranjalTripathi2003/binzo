@@ -76,3 +76,30 @@
   width: 100%;
   margin: 0 auto;
 }
+
+@media (max-width: 720px) {
+  .section {
+    padding: 0 1rem;
+  }
+
+  .heading {
+    margin-bottom: 0.85rem;
+    font-size: 1.15rem;
+  }
+
+  .productsRow {
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.25rem;
+    scroll-snap-type: x mandatory;
+  }
+
+  .productsRow > * {
+    scroll-snap-align: start;
+  }
+
+  .arrowBtn,
+  .arrowBtnLeft {
+    display: none;
+  }
+}

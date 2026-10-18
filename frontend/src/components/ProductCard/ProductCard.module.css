@@ -16,8 +16,8 @@
 }
 
 .productCard:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-color: #000000;
+  box-shadow: none;
 }
 
 .productCard:focus-visible {
@@ -113,4 +113,35 @@
 .button:disabled {
   opacity: 0.55;
   cursor: wait;
+}
+
+@media (max-width: 720px) {
+  .productCard {
+    width: 148px;
+    min-height: 235px;
+    gap: 0.55rem;
+    padding: 0.7rem;
+    border-color: #e2e8f0;
+    border-radius: 12px;
+    scroll-snap-align: start;
+  }
+
+  .image {
+    height: 96px;
+  }
+
+  .title {
+    min-height: 2.3em;
+    font-size: 0.84rem;
+  }
+
+  .quantity {
+    font-size: 0.78rem;
+  }
+
+  .button {
+    min-width: 64px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.78rem;
+  }
 }

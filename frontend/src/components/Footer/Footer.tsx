@@ -3,6 +3,14 @@ import styles from "./Footer.module.css";
 const Footer = () => {
   return (
     <footer className={styles.footer}>
+      <div className={styles.mobileBrand}>
+        <h2>We Deliver<br />Quick <span aria-hidden="true">🏃</span></h2>
+        <div className={styles.mobileDivider} />
+        <div className={styles.logo}>
+          <span className={styles.logoPrimary}>Bin</span>
+          <span className={styles.logoAccent}>zo</span>
+        </div>
+      </div>
       <div className={styles.main}>
         <div className={styles.logo}>
           <span className={styles.logoPrimary}>Bin</span>

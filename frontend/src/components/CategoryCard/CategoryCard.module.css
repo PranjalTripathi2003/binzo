@@ -18,8 +18,8 @@
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+  transform: none;
+  box-shadow: none;
 }
 
 .card:focus-visible {
@@ -52,4 +52,40 @@
   font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.12;
+}
+
+@media (max-width: 720px) {
+  .card {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background: transparent;
+  }
+
+  .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .image,
+  .iconBadge {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    background: #e5f5f5;
+    box-shadow: none;
+  }
+
+  .title {
+    display: -webkit-box;
+    min-height: 2.25em;
+    margin-top: 0.35rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }

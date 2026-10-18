@@ -62,8 +62,7 @@
 
 @media (max-width: 720px) {
   .hero {
-    width: min(100% - 2rem, 640px);
-    min-height: auto;
+    display: none;
   }
 
   .right {

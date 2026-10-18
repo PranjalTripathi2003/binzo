@@ -487,6 +487,15 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                   role="menu"
                   ref={accountDropdownRef}
                 >
+                  <button
+                    type="button"
+                    className={styles.mobileAccountClose}
+                    aria-label="Close account menu"
+                    onClick={() => setIsAccountOpen(false)}
+                  >
+                    <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+                    <span>Account</span>
+                  </button>
                   <h3>{user.name ?? user.email}</h3>
                   <p className={styles.phone}>{user.email}</p>
                   {user.role === "admin" && (
@@ -506,6 +515,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                       Admin Panel
                     </button>
                   )}
+                  <h4 className={styles.accountSectionTitle}>Your Information</h4>
                   <button
                     className={styles.dropdownItem}
                     type="button"
@@ -519,7 +529,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                       className="fa-solid fa-location-dot"
                       aria-hidden="true"
                     />
-                    Saved Addresses
+                    Address Book
                   </button>
                   <button
                     className={styles.dropdownItem}
@@ -531,7 +541,7 @@ const Navbar = ({ onLogoClick }: NavbarProps) => {
                     }}
                   >
                     <i className="fa-solid fa-receipt" aria-hidden="true" />
-                    My Orders
+                    Order History
                   </button>
                   <button
                     className={styles.dropdownItem}

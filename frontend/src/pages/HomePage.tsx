@@ -153,6 +153,27 @@ const HomePage = () => {
               if (category) setModalCategory(category);
             }}
           />
+          <section className={styles.mobileStores} aria-label="Shop by store">
+            <h2>Shop by store</h2>
+            <div className={styles.mobileStoreGrid}>
+              {[
+                { title: "Pharmacy", image: "/images/promo-card-image-1.png", color: "#dceefa" },
+                { title: "Tech", image: "/images/promo-card-image-3.png", color: "#e8e3ff" },
+                { title: "Pet", image: "/images/promo-card-image-2.png", color: "#ffe4cf" },
+              ].map((store) => (
+                <button
+                  key={store.title}
+                  type="button"
+                  className={styles.mobileStore}
+                  onClick={() => openCategoryModal(store.title === "Tech" ? "Electronics" : store.title === "Pet" ? "Pet Care" : store.title)}
+                  style={{ "--store-color": store.color } as React.CSSProperties}
+                >
+                  <img src={store.image} alt="" />
+                  <span>{store.title} Store</span>
+                </button>
+              ))}
+            </div>
+          </section>
           {status !== "loading" && (
             <ProductSection
               products={products}
